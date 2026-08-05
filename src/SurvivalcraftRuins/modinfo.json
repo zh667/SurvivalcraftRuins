@@ -1,0 +1,16 @@
+{
+  "$schema": "https://gitee.com/SC-SPM/SurvivalcraftApi/raw/SCAPI1.9/Survivalcraft/Content/modinfo-scheme.json",
+  "Name": "Survivalcraft Ruins 生存战争·遗迹",
+  "Version": "0.4.0",
+  "ApiVersion": "1.9.2",
+  "Description": "Adds explorable surface structures to world generation: fishing huts, hunter camps, wishing wells, ruined homesteads, werewolf dens, shipwrecks, abandoned mines and lighthouses, each with multi-chest weighted loot and one-shot beast ambushes. 为世界生成添加可探索的地表结构:渔屋、猎人营地、许愿井、草原废屋、狼人巢穴、搁浅沉船、废弃矿井、灯塔,均带多箱加权战利品与一次性野兽埋伏。",
+  "ScVersion": "2.4.0.0",
+  "LoadOrder": 0,
+  "NonPersistentMod": true,
+  "GameplayImpactLevel": "Assist",
+  "Link": "",
+  "Author": "SCRuins",
+  "PackageName": "SurvivalcraftRuins",
+  "Dependencies": {},
+  "Settings": []
+}
