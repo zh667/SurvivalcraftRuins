@@ -6,11 +6,19 @@ using System.Text.Json;
 
 namespace SurvivalcraftRuins.Core;
 
+/// <summary>
+/// A container written by worldgen that still needs its contents. Older saves
+/// predate <see cref="Container"/>, whose empty value means "Chest".
+/// </summary>
 public sealed class PendingChest
 {
     public int X, Y, Z;
     public string Pool = "";
     public int Seed;
+    /// <summary>Entity template of the block entity: "Chest" or "Dispenser".</summary>
+    public string Container = "";
+
+    public string ContainerTemplate => string.IsNullOrEmpty(Container) ? "Chest" : Container;
 }
 
 public sealed class AmbushState
@@ -22,6 +30,10 @@ public sealed class AmbushState
     public float Radius;
     public bool Triggered;
     public int Seed;
+    /// <summary>Guards spawn in water rather than in an air pocket.</summary>
+    public bool Aquatic;
+    /// <summary>Stand-in used when supernatural creatures are disabled; empty means skip.</summary>
+    public string Substitute = "";
 }
 
 public sealed class RuinsSaveData
@@ -30,6 +42,19 @@ public sealed class RuinsSaveData
 
     public List<AmbushState> Ambushes = new();
     public List<PendingChest> Chests = new();
+
+    /// <summary>
+    /// Density this world was generated with, frozen on first visit so that
+    /// changing the setting later cannot re-roll a world mid-exploration.
+    /// </summary>
+    public float DensityScale;
+
+    /// <summary>
+    /// Placement table this world uses. 0 marks a save written before the
+    /// rebalance; such worlds are pinned to layout 1 (the pre-0.5 grid) so the
+    /// structures already half-written into their explored edge stay complete.
+    /// </summary>
+    public int LayoutVersion;
 }
 
 /// <summary>Adapts the game's terrain generator to the testable sampler interface.</summary>
@@ -47,6 +72,16 @@ public sealed class GeneratorSampler : IWorldSampler
     public float Height(float x, float z)
     {
         return m_generator.CalculateHeight(x, z);
+    }
+
+    public int Temperature(float x, float z)
+    {
+        return m_generator.CalculateTemperature(x, z);
+    }
+
+    public int Humidity(float x, float z)
+    {
+        return m_generator.CalculateHumidity(x, z);
     }
 }
 
@@ -81,33 +116,52 @@ public sealed class WorldState
     private static readonly ConcurrentDictionary<StructureData, (short X, short Z)[]> s_baseColumns = new();
     private static readonly ConcurrentDictionary<StructureData, ChestMarker[]> s_sortedChests = new();
 
+    /// <summary>Guard post budget per variant; per-world so it dies with the world.</summary>
+    private readonly ConcurrentDictionary<StructureVariant, GuardPost[]> m_guardPosts = new();
+
     public string SavePath => Storage.CombinePaths(GameInfo.DirectoryName, "SurvivalcraftRuins.json");
 
-    public void LoadPersistence()
+    /// <summary>Density frozen into this world; the placement engine is built with it.</summary>
+    public float DensityScale { get; init; } = 1f;
+
+    /// <summary>Placement table generation this world was created with.</summary>
+    public int LayoutVersion { get; init; } = StructureRegistry.CurrentLayoutVersion;
+
+    /// <summary>Live multiplier on guard counts; unlike density this may change any time.</summary>
+    public float GuardScale => RuinsSettings.Guards;
+
+    /// <summary>Reads a world's save file, or null when it has none yet.</summary>
+    public static RuinsSaveData? ReadSaveData(string directoryName)
     {
+        string path = Storage.CombinePaths(directoryName, "SurvivalcraftRuins.json");
         try
         {
-            if (!Storage.FileExists(SavePath))
+            if (!Storage.FileExists(path))
             {
-                return;
+                return null;
             }
-            using var stream = Storage.OpenFile(SavePath, OpenFileMode.Read);
+            using var stream = Storage.OpenFile(path, OpenFileMode.Read);
             using var reader = new StreamReader(stream);
-            var data = JsonSerializer.Deserialize<RuinsSaveData>(reader.ReadToEnd(), s_jsonOptions);
-            if (data == null)
-            {
-                return;
-            }
-            foreach (var ambush in data.Ambushes)
-            {
-                Ambushes[ambush.Id] = ambush;
-            }
-            PendingChests.AddRange(data.Chests);
+            return JsonSerializer.Deserialize<RuinsSaveData>(reader.ReadToEnd(), s_jsonOptions);
         }
         catch (Exception exception)
         {
             Log.Warning($"[Ruins] Failed to load persistence: {exception.Message}");
+            return null;
         }
+    }
+
+    public void LoadPersistence(RuinsSaveData? data)
+    {
+        if (data == null)
+        {
+            return;
+        }
+        foreach (var ambush in data.Ambushes)
+        {
+            Ambushes[ambush.Id] = ambush;
+        }
+        PendingChests.AddRange(data.Chests);
     }
 
     public void SavePersistence()
@@ -118,6 +172,8 @@ public sealed class WorldState
             {
                 Ambushes = new List<AmbushState>(Ambushes.Values),
                 Chests = new List<PendingChest>(PendingChests),
+                DensityScale = DensityScale,
+                LayoutVersion = LayoutVersion,
             };
             string json = JsonSerializer.Serialize(data, s_jsonOptions);
             using var stream = Storage.OpenFile(SavePath, OpenFileMode.Create);
@@ -214,43 +270,58 @@ public sealed class WorldState
             {
                 int chestIndex = Array.FindIndex(sortedChests, m => m.X == cell.X && m.Y == cell.Y && m.Z == cell.Z);
                 string pool = ResolveChestPool(variant, chestIndex);
-                IncomingChests.Enqueue(new PendingChest
-                {
-                    X = wx,
-                    Y = wy,
-                    Z = wz,
-                    Pool = pool,
-                    Seed = (int)DeterministicHash.Mix((uint)instance.InstanceSeed,
-                        DeterministicHash.Mix((uint)wx, DeterministicHash.Mix((uint)wy, (uint)wz))),
-                });
+                EnqueueContainer(instance, wx, wy, wz, pool, "Chest");
+            }
+            else if (blockName == "DispenserBlock" && variant.DispenserPool != null)
+            {
+                EnqueueContainer(instance, wx, wy, wz, variant.DispenserPool, "Dispenser");
             }
         }
 
-        if (variant.Ambush != null)
+        if (variant.Guards != null)
         {
-            foreach (var marker in data.Ambushes)
+            foreach (var post in m_guardPosts.GetOrAdd(variant, static (v, d) => GuardPlanner.Plan(v, d), data))
             {
-                int wx = ox + marker.X;
-                int wz = oz + marker.Z;
+                int wx = ox + post.X;
+                int wz = oz + post.Z;
                 if (wx < baseX || wx > baseX + 15 || wz < baseZ || wz > baseZ + 15)
                 {
                     continue;
                 }
-                int wy = Math.Clamp(oy + marker.Y, 1, 254);
+                int wy = Math.Clamp(oy + post.Y, 1, 254);
+                uint postHash = DeterministicHash.Mix((uint)instance.InstanceSeed, (uint)(wx * 31 ^ wz));
+                var creatures = variant.Guards.Creatures;
+                string creature = creatures[(int)(postHash % (uint)creatures.Count)];
                 IncomingAmbushes.Enqueue(new AmbushState
                 {
                     Id = $"{variant.Name}:{wx},{wy},{wz}",
                     X = wx,
                     Y = wy,
                     Z = wz,
-                    Creature = variant.Ambush.CreatureTemplate,
-                    Min = variant.Ambush.MinCount,
-                    Max = variant.Ambush.MaxCount,
-                    Radius = variant.Ambush.TriggerRadius,
-                    Seed = (int)DeterministicHash.Mix((uint)instance.InstanceSeed, (uint)(wx ^ wz)),
+                    Creature = creature,
+                    Min = post.Count,
+                    Max = post.Count,
+                    Radius = variant.Guards.TriggerRadius,
+                    Aquatic = variant.Guards.Aquatic,
+                    Substitute = variant.Guards.MundaneSubstitute ?? "",
+                    Seed = (int)DeterministicHash.Mix(postHash, 0x60ADu),
                 });
             }
         }
+    }
+
+    private void EnqueueContainer(StructureInstance instance, int wx, int wy, int wz, string pool, string container)
+    {
+        IncomingChests.Enqueue(new PendingChest
+        {
+            X = wx,
+            Y = wy,
+            Z = wz,
+            Pool = pool,
+            Container = container,
+            Seed = (int)DeterministicHash.Mix((uint)instance.InstanceSeed,
+                DeterministicHash.Mix((uint)wx, DeterministicHash.Mix((uint)wy, (uint)wz))),
+        });
     }
 
     private static string ResolveChestPool(StructureVariant variant, int chestIndex)

@@ -124,6 +124,27 @@ public static class RuinsRuntime
                     return null;
                 }
                 BlockResolver.EnsureInitialized();
+
+                // Every world, however old, gets the current table. Earlier
+                // versions pinned a world to the layout it was created with so
+                // that a structure straddling the explored frontier could never
+                // end up half written. That cost more than it bought: players
+                // adding the mod to a world they already play got the old,
+                // near-empty layout and never saw the new structures. The
+                // frontier artefact is one partially written building at the
+                // edge of already generated land, once, and only where the two
+                // layouts disagree.
+                var saved = WorldState.ReadSaveData(gameInfo.DirectoryName);
+                float density = RuinsSettings.Density;
+                int layout = StructureRegistry.CurrentLayoutVersion;
+                if (saved != null && saved.LayoutVersion != layout)
+                {
+                    Log.Information(
+                        $"[Ruins] World '{gameInfo.DirectoryName}' was generated with layout "
+                        + $"{saved.LayoutVersion}; newly generated chunks will use layout {layout}. "
+                        + "Already generated land is untouched.");
+                }
+
                 var defs = StructureRegistry.CreateDefs(s_templates);
                 var sampler = new GeneratorSampler(terrain.TerrainContentsGenerator);
                 var state = new WorldState
@@ -135,12 +156,17 @@ public static class RuinsRuntime
                     Players = project.FindSubsystem<SubsystemPlayers>(throwOnError: true),
                     CreatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(throwOnError: true),
                     Generator = terrain.TerrainContentsGenerator,
-                    Placement = new PlacementEngine(gameInfo.WorldSeed, sampler, defs),
+                    Placement = new PlacementEngine(gameInfo.WorldSeed, sampler, defs, density),
                     LootPools = s_lootPools,
+                    DensityScale = density,
+                    LayoutVersion = layout,
                 };
-                state.LoadPersistence();
+                state.LoadPersistence(saved);
+                state.Dirty = true;   // records density/layout for worlds that predate them
                 s_state = state;
-                Log.Information($"[Ruins] Bound to world '{gameInfo.DirectoryName}', seed {gameInfo.WorldSeed}.");
+                Log.Information(
+                    $"[Ruins] Bound to world '{gameInfo.DirectoryName}', seed {gameInfo.WorldSeed}, "
+                    + $"layout {layout}, density {density:0.##}, guards {RuinsSettings.Guards:0.##}.");
                 return state;
             }
             catch (Exception exception)
@@ -198,8 +224,9 @@ public static class RuinsRuntime
             }
             processed++;
             int contents = state.Terrain.Terrain.GetCellContents(pending.X, pending.Y, pending.Z);
-            bool stillChest = BlockResolver.TryGetIndex("ChestBlock", out int chestIndex) && contents == chestIndex;
-            if (stillChest)
+            string blockName = pending.ContainerTemplate == "Dispenser" ? "DispenserBlock" : "ChestBlock";
+            bool stillThere = BlockResolver.TryGetIndex(blockName, out int blockIndex) && contents == blockIndex;
+            if (stillThere)
             {
                 try
                 {
@@ -207,7 +234,7 @@ public static class RuinsRuntime
                 }
                 catch (Exception exception)
                 {
-                    Log.Warning($"[Ruins] Chest fill at {pending.X},{pending.Y},{pending.Z} failed: {exception.Message}");
+                    Log.Warning($"[Ruins] Container fill at {pending.X},{pending.Y},{pending.Z} failed: {exception.Message}");
                 }
             }
             state.PendingChests.RemoveAt(i);
@@ -224,7 +251,7 @@ public static class RuinsRuntime
             // Replicates SubsystemBlockEntities.CreateBlockEntityLogic without
             // the owner (which dereferences a null miner during worldgen).
             var databaseObject = state.Project.GameDatabase.Database.FindDatabaseObject(
-                "Chest", state.Project.GameDatabase.EntityTemplateType, throwIfNotFound: true);
+                pending.ContainerTemplate, state.Project.GameDatabase.EntityTemplateType, throwIfNotFound: true);
             var valuesDictionary = new ValuesDictionary();
             valuesDictionary.PopulateFromDatabaseObject(databaseObject);
             valuesDictionary.GetValue<ValuesDictionary>("BlockEntity").SetValue("Coordinates", point);
@@ -236,7 +263,9 @@ public static class RuinsRuntime
                 return;
             }
         }
-        var chest = blockEntity.Entity.FindComponent<ComponentChest>();
+        // ComponentChest and ComponentDispenser share ComponentInventoryBase, so
+        // the same fill path serves chests and loaded arrow traps.
+        var chest = blockEntity.Entity.FindComponent<ComponentInventoryBase>();
         if (chest == null)
         {
             return;
@@ -307,8 +336,23 @@ public static class RuinsRuntime
 
     private static void SpawnAmbush(WorldState state, AmbushState ambush)
     {
+        string creature = ambush.Creature;
+        if (!state.GameInfo.WorldSettings.AreSupernaturalCreaturesEnabled && IsSupernatural(creature))
+        {
+            if (string.IsNullOrEmpty(ambush.Substitute))
+            {
+                return;
+            }
+            creature = ambush.Substitute;
+        }
+
         var random = new Random(ambush.Seed);
         int count = random.Next(ambush.Min, ambush.Max + 1);
+        count = (int)MathF.Round(count * state.GuardScale);
+        if (count <= 0)
+        {
+            return;
+        }
         for (int i = 0; i < count; i++)
         {
             float angle = (float)(random.NextDouble() * Math.PI * 2.0);
@@ -317,11 +361,13 @@ public static class RuinsRuntime
             int z = ambush.Z + (int)MathF.Round(MathF.Sin(angle) * distance);
             // Prefer the marker height (inside the structure); creatures placed
             // at the terrain top would appear on the roof and wander off.
-            int y = FindSpawnY(state, x, ambush.Y, z);
+            int y = ambush.Aquatic
+                ? FindWaterSpawnY(state, x, ambush.Y, z)
+                : FindSpawnY(state, x, ambush.Y, z);
             try
             {
                 // Portable across SCAPI and Net2.4 (CreateEntity is Net-only).
-                var entity = DatabaseManager.CreateEntity(state.Project, ambush.Creature, throwIfNotFound: true);
+                var entity = DatabaseManager.CreateEntity(state.Project, creature, throwIfNotFound: true);
                 var frame = entity.FindComponent<ComponentFrame>(throwOnError: true);
                 frame.Position = new Vector3(x + 0.5f, y + 0.5f, z + 0.5f);
                 frame.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY,
@@ -331,16 +377,50 @@ public static class RuinsRuntime
             }
             catch (Exception exception)
             {
-                Log.Warning($"[Ruins] Ambush spawn '{ambush.Creature}' failed: {exception.Message}");
+                Log.Warning($"[Ruins] Guard spawn '{creature}' failed: {exception.Message}");
             }
         }
-        Log.Information($"[Ruins] Ambush sprung at {ambush.X},{ambush.Y},{ambush.Z}: {count}x {ambush.Creature}.");
+        Log.Information($"[Ruins] Guards roused at {ambush.X},{ambush.Y},{ambush.Z}: {count}x {creature}.");
+    }
+
+    private static bool IsSupernatural(string creature)
+    {
+        return creature.StartsWith("Werewolf", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
-    /// Picks a spawn height: the marker height when there is standing room
-    /// there (inside a den), otherwise the first air gap scanning upward, and
-    /// as a last resort above the terrain.
+    /// Spawn height for swimmers: the first cell around the marker that holds
+    /// water, searched upward then downward, so sharks never beach themselves.
+    /// </summary>
+    private static int FindWaterSpawnY(WorldState state, int x, int markerY, int z)
+    {
+        var terrain = state.Terrain.Terrain;
+        if (terrain.GetChunkAtCell(x, z) == null)
+        {
+            return Math.Clamp(markerY, 1, 254);
+        }
+        BlockResolver.TryGetIndex("WaterBlock", out int water);
+        for (int offset = 0; offset <= 8; offset++)
+        {
+            int up = markerY + offset;
+            if (up <= 253 && terrain.GetCellContents(x, up, z) == water)
+            {
+                return up;
+            }
+            int down = markerY - offset;
+            if (down >= 1 && terrain.GetCellContents(x, down, z) == water)
+            {
+                return down;
+            }
+        }
+        return Math.Clamp(markerY, 1, 254);
+    }
+
+    /// <summary>
+    /// Picks a spawn height: standing room as close to the post as possible,
+    /// searched up and then down, and only as a last resort above the terrain.
+    /// Guards are posted at chests now, so a cramped cellar must not push them
+    /// up through the roof.
     /// </summary>
     private static int FindSpawnY(WorldState state, int x, int markerY, int z)
     {
@@ -349,13 +429,24 @@ public static class RuinsRuntime
         {
             return Math.Clamp(markerY, 1, 254);
         }
-        for (int y = markerY; y <= Math.Min(markerY + 6, 253); y++)
+        for (int offset = 0; offset <= 6; offset++)
         {
-            if (terrain.GetCellContents(x, y, z) == 0 && terrain.GetCellContents(x, y + 1, z) == 0)
+            int up = markerY + offset;
+            if (up <= 253 && HasStandingRoom(terrain, x, up, z))
             {
-                return y;
+                return up;
+            }
+            int down = markerY - offset;
+            if (down >= 1 && HasStandingRoom(terrain, x, down, z))
+            {
+                return down;
             }
         }
         return Math.Min(terrain.CalculateTopmostCellHeight(x, z) + 1, 254);
+    }
+
+    private static bool HasStandingRoom(Terrain terrain, int x, int y, int z)
+    {
+        return terrain.GetCellContents(x, y, z) == 0 && terrain.GetCellContents(x, y + 1, z) == 0;
     }
 }

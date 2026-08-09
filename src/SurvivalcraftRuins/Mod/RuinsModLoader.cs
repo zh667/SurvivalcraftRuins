@@ -42,4 +42,14 @@ public sealed class RuinsModLoader : ModLoader
             Engine.Log.Error($"[Ruins] Update hook failed: {exception}");
         }
     }
+
+    public override void SaveSettings(System.Xml.Linq.XElement xElement)
+    {
+        RuinsSettings.Save(xElement);
+    }
+
+    public override void LoadSettings(System.Xml.Linq.XElement xElement)
+    {
+        RuinsSettings.Load(xElement);
+    }
 }

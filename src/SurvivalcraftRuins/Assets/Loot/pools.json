@@ -311,6 +311,76 @@
         { "block": "CompassBlock", "w": 2, "min": 1, "max": 1 },
         { "block": "", "w": 1 }
       ]
+    },
+    {
+      "name": "desert_temple",
+      "rolls": [5, 7],
+      "entries": [
+        { "block": "DiamondChunkBlock", "w": 5, "min": 1, "max": 3 },
+        { "block": "GermaniumChunkBlock", "w": 5, "min": 2, "max": 4 },
+        { "block": "IronIngotBlock", "w": 6, "min": 3, "max": 6 },
+        { "block": "CopperIngotBlock", "w": 5, "min": 4, "max": 7 },
+        { "block": "SaddleBlock", "w": 3, "min": 1, "max": 1 },
+        { "block": "BreadBlock", "w": 4, "min": 2, "max": 4 },
+        { "block": "FeatherBlock", "w": 4, "min": 3, "max": 6 },
+        { "block": "StringBlock", "w": 4, "min": 3, "max": 6 },
+        { "block": "ClothingBlock", "data": 30, "w": 2, "min": 1, "max": 1 },
+        { "block": "DiamondMacheteBlock", "w": 1, "min": 1, "max": 1 },
+        { "block": "EggBlock", "data": 256, "w": 2, "min": 1, "max": 1 },
+        { "block": "", "w": 3 }
+      ]
+    },
+    {
+      "name": "jungle_temple",
+      "rolls": [5, 7],
+      "entries": [
+        { "block": "DiamondChunkBlock", "w": 5, "min": 1, "max": 3 },
+        { "block": "GermaniumChunkBlock", "w": 5, "min": 2, "max": 4 },
+        { "block": "IronIngotBlock", "w": 6, "min": 3, "max": 6 },
+        { "block": "MalachiteChunkBlock", "w": 5, "min": 3, "max": 6 },
+        { "block": "SaddleBlock", "w": 3, "min": 1, "max": 1 },
+        { "block": "BowBlock", "w": 3, "min": 1, "max": 1 },
+        { "block": "ArrowBlock", "w": 5, "min": 6, "max": 12 },
+        { "block": "FurBlock", "w": 4, "min": 3, "max": 5 },
+        { "block": "LeatherBlock", "w": 4, "min": 3, "max": 5 },
+        { "block": "DiamondSpearBlock", "w": 1, "min": 1, "max": 1 },
+        { "block": "", "w": 3 }
+      ]
+    },
+    {
+      "name": "trap_arrows",
+      "rolls": [1, 1],
+      "entries": [
+        { "block": "ArrowBlock", "w": 1, "min": 12, "max": 20 }
+      ]
+    },
+    {
+      "name": "monument_wing",
+      "rolls": [4, 6],
+      "entries": [
+        { "block": "IronIngotBlock", "w": 6, "min": 3, "max": 6 },
+        { "block": "CopperIngotBlock", "w": 5, "min": 4, "max": 8 },
+        { "block": "StringBlock", "w": 5, "min": 4, "max": 8 },
+        { "block": "RawFishBlock", "w": 4, "min": 2, "max": 4 },
+        { "block": "CompassBlock", "w": 3, "min": 1, "max": 1 },
+        { "block": "FireworksBlock", "w": 3, "min": 2, "max": 4 },
+        { "block": "", "w": 4 }
+      ]
+    },
+    {
+      "name": "monument_vault",
+      "rolls": [6, 8],
+      "entries": [
+        { "block": "DiamondChunkBlock", "w": 7, "min": 3, "max": 5 },
+        { "block": "GermaniumChunkBlock", "w": 6, "min": 3, "max": 6 },
+        { "block": "IronIngotBlock", "w": 5, "min": 6, "max": 10 },
+        { "block": "DiamondMacheteBlock", "w": 2, "min": 1, "max": 1 },
+        { "block": "DiamondSpearBlock", "w": 2, "min": 1, "max": 1 },
+        { "block": "ClothingBlock", "data": 21, "w": 2, "min": 1, "max": 1 },
+        { "block": "CompassBlock", "w": 2, "min": 1, "max": 1 },
+        { "block": "FireworksBlock", "w": 3, "min": 4, "max": 6 },
+        { "block": "", "w": 1 }
+      ]
     }
   ]
 }

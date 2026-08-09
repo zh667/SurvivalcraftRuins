@@ -9,7 +9,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/src/SurvivalcraftRuins"
-VERSION=$(grep -oP '"Version": "\K[^"]+' "$SRC/modinfo.json" | head -1)
+VERSION=$(grep -oP '"Version": "\K[^"]+' "$SRC/modinfo.json" | head -1)   # reported only, not in the file name
 OUT="$ROOT/artifacts"
 NET_DIR="${NET_DIR:-$HOME/sc-libs/}"
 SCAPI_DIR="${SCAPI_DIR:-/home/dev/projects/[Windows]SurvivalcraftAPI_1.9.2.1/}"
@@ -18,7 +18,10 @@ mkdir -p "$OUT"
 
 package_one() {
     local runtime_dir="$1" ext="$2"
-    local pkg="$OUT/SurvivalcraftRuins-$VERSION.$ext"
+    # No version in the file name: players drop the same file into Mods/ every
+    # time and the version is read from modinfo.json (and shown on the release
+    # page). A versioned name leaves stale copies behind that both load.
+    local pkg="$OUT/SurvivalcraftRuins.$ext"
     dotnet build "$SRC" -c Release "-p:SurvivalcraftDir=$runtime_dir" > /dev/null
     local stage
     stage=$(mktemp -d)
@@ -70,7 +73,7 @@ import zipfile
 z = zipfile.ZipFile('$pkg')
 names = z.namelist()
 assert 'modinfo.json' in names and 'SurvivalcraftRuins.dll' in names, names
-print('$pkg'.split('/')[-1], f'{len(names)} entries OK')
+print('$pkg'.split('/')[-1], f'v$VERSION, {len(names)} entries OK')
 "
 }
 
