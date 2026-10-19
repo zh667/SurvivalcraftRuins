@@ -87,13 +87,16 @@ public static class DesertTempleBuilder
         b.Set(Width - 6, 6, 10, Air);
         b.Set(Width - 7, 6, 10, Air);
 
-        // Stair niches flanking the hall.
+        // Stair niches flanking the hall. Stair data is the direction of the
+        // tall half (0 north, 1 west, 2 south, 3 east); Minecraft's facings are
+        // mirrored north<->south here, because this builder lays the piece out
+        // the way DesertPyramidPiece does when it faces south.
         b.Fill(2, 4, 4, 2, 6, 4, Air);
         b.Fill(Width - 3, 4, 4, Width - 3, 6, 4, Air);
-        b.Set(2, 4, 5, Stairs, 0);
-        b.Set(2, 3, 4, Stairs, 0);
-        b.Set(Width - 3, 4, 5, Stairs, 0);
-        b.Set(Width - 3, 3, 4, Stairs, 0);
+        b.Set(2, 4, 5, Stairs, 2);
+        b.Set(2, 3, 4, Stairs, 2);
+        b.Set(Width - 3, 4, 5, Stairs, 2);
+        b.Set(Width - 3, 3, 4, Stairs, 2);
 
         b.Fill(1, 1, 3, 2, 2, 3, Sand);
         b.Fill(Width - 3, 1, 3, Width - 2, 2, 3, Sand);
@@ -101,8 +104,8 @@ public static class DesertTempleBuilder
         b.Set(Width - 2, 1, 2, Sand);
         b.Set(1, 2, 2, Slab);
         b.Set(Width - 2, 2, 2, Slab);
-        b.Set(2, 1, 2, Stairs, 3);
-        b.Set(Width - 3, 1, 2, Stairs, 1);
+        b.Set(2, 1, 2, Stairs, 1);
+        b.Set(Width - 3, 1, 2, Stairs, 3);
 
         // Long colonnaded galleries down both flanks.
         b.Fill(4, 3, 5, 4, 3, 17, Sand);

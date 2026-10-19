@@ -133,8 +133,8 @@ public static class JungleTempleBuilder
         }
         MossFill(b, random, 4, 1, 10, 7, 2, 10);
         MossFill(b, random, 5, 4, 5, 6, 4, 5);
-        b.Set(4, 4, 5, Stairs, 1);
-        b.Set(7, 4, 5, Stairs, 3);
+        b.Set(4, 4, 5, Stairs, 3);   // tall half east (data: 0 N, 1 W, 2 S, 3 E)
+        b.Set(7, 4, 5, Stairs, 1);
 
         // The staircase down into the basement.
         for (int i = 0; i < 4; i++)

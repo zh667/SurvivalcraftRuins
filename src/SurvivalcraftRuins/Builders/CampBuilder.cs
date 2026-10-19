@@ -28,9 +28,9 @@ public static class CampBuilder
         int logs = 2 + random.Next(2);
         for (int i = 0; i < logs; i++)
         {
-            b.Set(-1 + i, 1, 3, "OakWoodBlock", 1);
+            b.Set(-1 + i, 1, 3, "OakWoodBlock", 2);   // log axis: 0 y, 1 z, 2 x
         }
-        b.Set(-1, 1, 4, "OakWoodBlock", 1);
+        b.Set(-1, 1, 4, "OakWoodBlock", 2);
 
         // Drying rack: two fence posts and a beam.
         b.Set(0, 1, -3, "WoodenFenceBlock");

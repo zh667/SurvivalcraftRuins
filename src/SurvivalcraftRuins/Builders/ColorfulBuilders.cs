@@ -96,7 +96,7 @@ public static class WatchtowerBuilder
                     b.Set(x, y, z, wall ? "CobblestoneBlock" : "AirBlock");
                 }
             }
-            b.Set(0, y, 1, "WoodenLadderBlock", 0);
+            b.Set(0, y, 1, "WoodenLadderBlock", 2);   // on the south wall: hangs on C - FaceToPoint3(2)
         }
         // Ground-floor doorway.
         b.Set(0, 1, -2, "AirBlock");

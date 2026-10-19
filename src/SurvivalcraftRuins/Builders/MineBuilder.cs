@@ -48,7 +48,7 @@ public static class MineBuilder
         {
             b.Fill(0, y, 0, 1, y, 1, "AirBlock");
             b.Set(0, y, -1, "PlanksBlock");        // shaft lining on ladder side
-            b.Set(0, y, 0, "WoodenLadderBlock", 2);
+            b.Set(0, y, 0, "WoodenLadderBlock", 0);   // hangs on the lining at -z
         }
         b.Fill(-1, galleryY - 1, -1, 2, galleryY - 1, 2, "PlanksBlock"); // shaft floor
 

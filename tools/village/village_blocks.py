@@ -10,8 +10,7 @@ SubsystemTorchBlockBehavior, WoodBlock): Survivalcraft numbers faces
 0 = +Z (south), 1 = +X (east), 2 = -Z (north), 3 = -X (west). Attached blocks
 (ladders, wall torches, signs, buttons, trapdoors) store the face they look
 out of: FACE. Stairs, gates and doors store the placing player's look
-direction: LOOK. convert_nbt.py's older single table gets east/west stairs
-and north/south ladders and torches backwards, and swaps log axes x/z.
+direction: LOOK. The tables are convert_nbt's (fixed in 1.1).
 """
 import convert_nbt as cn
 
@@ -40,9 +39,9 @@ def loot_pool(table):
     return LOOT.get(table, "village_house")
 
 
-# SC CellFace numbering: FaceToPoint3(f) = 0:(0,0,+1) south, 1:(+1,0,0) east, 2:(0,0,-1) north, 3:(-1,0,0) west
-FACE = {"south": 0, "east": 1, "north": 2, "west": 3}   # SC face index pointing in the MC direction
-LOOK = {"north": 0, "west": 1, "south": 2, "east": 3}   # SC "rotation" = player's look direction at placement
+# Facing tables live in convert_nbt (see the note there).
+FACE = cn.FACE
+LOOK = cn.LOOK
 
 # Nearest SC fabric colour (CIELAB dE76 against SubsystemPalette fabric colours) per MC dye
 SC_COLOR = {
@@ -51,7 +50,7 @@ SC_COLOR = {
     "brown": 12, "green": 13, "red": 14, "black": 15,
 }
 
-WOOD_AXIS = {"y": 0, "z": 1, "x": 2}
+WOOD_AXIS = cn.WOOD_AXIS
 SAPLING = {"oak": 0, "birch": 1, "spruce": 2, "acacia": 4, "jungle": 0, "dark_oak": 0}
 STONE_PLATES = {"stone_pressure_plate", "polished_blackstone_pressure_plate",
                 "light_weighted_pressure_plate", "heavy_weighted_pressure_plate"}

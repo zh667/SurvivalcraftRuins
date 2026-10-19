@@ -52,7 +52,7 @@ public static class ShipwreckBuilder
         // Keel line for silhouette.
         for (int x = 1; x < length - 1; x++)
         {
-            b.Set(x - half, 0, 0, "OakWoodBlock", 1);
+            b.Set(x - half, 0, 0, "OakWoodBlock", 2);   // lying along x (axis data 2)
         }
 
         // Hull breach on a random side amidships — the way in for divers.
@@ -66,9 +66,14 @@ public static class ShipwreckBuilder
             }
         }
 
-        // Deck hatch into the hold.
+        // Deck hatch into the hold, with a ladder down a plank post: a ladder
+        // has to hang on something, and the hold is open all round.
         b.Set(1, hullTop, 0, "AirBlock");
-        b.Set(1, hullTop - 1, 0, "WoodenLadderBlock", 0);
+        for (int y = 1; y < hullTop; y++)
+        {
+            b.Set(1, y, 1, "PlanksBlock");
+            b.Set(1, y, 0, "WoodenLadderBlock", 2);   // hangs on the post at +z
+        }
 
         // Broken mast: a stump plus a fallen section across the deck.
         int mastX = -half + length / 3;
@@ -80,7 +85,7 @@ public static class ShipwreckBuilder
         int fallenLength = 4 + random.Next(2);
         for (int i = 1; i <= fallenLength; i++)
         {
-            b.Set(mastX + i, hullTop + 1, Math.Min(halfBeam - 1, i / 2), "OakWoodBlock", 1);
+            b.Set(mastX + i, hullTop + 1, Math.Min(halfBeam - 1, i / 2), "OakWoodBlock", 2);
         }
 
         // Stern cabin with the captain's goods.
