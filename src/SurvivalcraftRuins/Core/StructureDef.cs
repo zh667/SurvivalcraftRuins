@@ -14,7 +14,19 @@ public enum AnchorKind
     Ocean,
     /// <summary>Floating high above the terrain (sky dungeons).</summary>
     Sky,
+    /// <summary>
+    /// Many buildings, each at its own ground height (villages). The variant's
+    /// <see cref="StructureVariant.SitedProvider"/> lays it out against the
+    /// terrain and says whether the site will do.
+    /// </summary>
+    Settlement,
 }
+
+/// <summary>What a terrain-aware provider is asked to build: a seed and a centre column.</summary>
+public readonly record struct SiteRequest(int Seed, int CenterX, int CenterZ, IWorldSampler Sampler);
+
+/// <summary>A structure laid out against real terrain, with the height its cells are relative to.</summary>
+public sealed record SitedStructure(StructureData Data, int OriginY);
 
 /// <summary>
 /// Inclusive extent of a structure in relative coordinates. Declaring it lets
@@ -132,6 +144,15 @@ public sealed class StructureVariant
     public required Func<int, StructureData> Provider { get; init; }
 
     /// <summary>
+    /// For <see cref="AnchorKind.Settlement"/>: builds the structure against the
+    /// terrain around a centre column, or returns null when the site will not
+    /// do. Deterministic for a given request, because the world rebuilds every
+    /// chunk's share of it from its ledger record. <see cref="Provider"/> then
+    /// only serves tests and tools, as the same layout on flat ground.
+    /// </summary>
+    public Func<SiteRequest, SitedStructure?>? SitedProvider { get; init; }
+
+    /// <summary>
     /// Loot pool names assigned to chests in template order (sorted by Y, then Z,
     /// then X). When there are more chests than entries the last entry repeats.
     /// </summary>
@@ -174,6 +195,16 @@ public sealed class StructureDef
     /// <summary>Chance [0..1] that a grid cell actually contains an instance.</summary>
     public required float Chance { get; init; }
 
+    /// <summary>
+    /// How hard the density setting pulls on this slot, as an exponent: the
+    /// chance is multiplied by density^exponent. Small finds take the slider at
+    /// face value (1), because a player asking for more to loot means them.
+    /// Landmarks take it at half strength, so turning the dial up thickens the
+    /// countryside without putting a sky fortress on every horizon. 0 in the
+    /// setting still means nothing generates, whatever the exponent.
+    /// </summary>
+    public float DensityExponent { get; init; } = 1f;
+
     public required AnchorKind Anchor { get; init; }
 
     /// <summary>Max height difference across footprint corners for Land/Coast placement.</summary>
@@ -188,6 +219,20 @@ public sealed class StructureDef
 
     /// <summary>Temperature/humidity window; null places the structure in any biome.</summary>
     public BiomeFilter? Biome { get; init; }
+
+    /// <summary>
+    /// Largest horizontal extent any variant of this slot can have. Governs how
+    /// far around a chunk the engine looks for instances that might reach it.
+    /// </summary>
+    public int Footprint { get; init; } = PlacementEngine.MaxFootprint;
+
+    /// <summary>
+    /// Chooses the variant from the climate at the site, for slots whose
+    /// variants each belong to a biome (village styles). Null picks by hash
+    /// alone. Arguments: temperature, humidity, hash; null result = no variant
+    /// suits this climate.
+    /// </summary>
+    public Func<int, int, uint, StructureVariant?>? PickVariant { get; init; }
 
     public required IReadOnlyList<StructureVariant> Variants { get; init; }
 

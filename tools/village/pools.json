@@ -1,0 +1,2035 @@
+{
+ "village/common/animals": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/common/butcher_animals": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/common/cats": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/common/iron_golem": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/common/sheep": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/common/well_bottoms": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/common/well_bottom",
+    "processors": "EMPTY",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/desert/decor": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/desert/desert_lamp_1",
+    "processors": "EMPTY",
+    "weight": 10
+   },
+   {
+    "feature": "PATCH_CACTUS",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_HAY",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "kind": "empty",
+    "weight": 10
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/desert/houses": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_3",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_4",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_5",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_6",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_7",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_small_house_8",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_medium_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_medium_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_butcher_shop_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_tool_smith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_fletcher_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_shepherd_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_armorer_1",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_fisher_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_tannery_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_cartographer_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_library_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_mason_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_weaponsmith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_temple_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_temple_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_large_farm_1",
+    "processors": "FARM_DESERT",
+    "weight": 11
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_farm_1",
+    "processors": "FARM_DESERT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_farm_2",
+    "processors": "FARM_DESERT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_animal_pen_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/houses/desert_animal_pen_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "empty",
+    "weight": 5
+   }
+  ],
+  "fallback": "village/desert/terminators",
+  "projection": "rigid"
+ },
+ "village/desert/streets": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/corner_01",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/corner_02",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/straight_01",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/straight_02",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/straight_03",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/crossroad_01",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/crossroad_02",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/crossroad_03",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/square_01",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/square_02",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/streets/turn_01",
+    "processors": "EMPTY",
+    "weight": 3
+   }
+  ],
+  "fallback": "village/desert/terminators",
+  "projection": "terrain_matching"
+ },
+ "village/desert/terminators": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/desert/terminators/terminator_01",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/terminators/terminator_02",
+    "processors": "EMPTY",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "terrain_matching"
+ },
+ "village/desert/town_centers": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/desert/town_centers/desert_meeting_point_1",
+    "processors": "EMPTY",
+    "weight": 98
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/town_centers/desert_meeting_point_2",
+    "processors": "EMPTY",
+    "weight": 98
+   },
+   {
+    "kind": "legacy",
+    "location": "village/desert/town_centers/desert_meeting_point_3",
+    "processors": "EMPTY",
+    "weight": 49
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/desert/villagers": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/plains/decor": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/plains_lamp_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "feature": "OAK",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "feature": "FLOWER_PLAIN",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "feature": "PILE_HAY",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "kind": "empty",
+    "weight": 2
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/plains/houses": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_3",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_4",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_5",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_6",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_7",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_house_8",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_medium_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_medium_house_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_big_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_butcher_shop_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_butcher_shop_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_tool_smith_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_fletcher_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_shepherds_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_armorer_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_fisher_cottage_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_tannery_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_cartographer_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_library_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 5
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_library_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_masons_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_weaponsmith_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_temple_3",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_temple_4",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_stable_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_stable_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_large_farm_1",
+    "processors": "FARM_PLAINS",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_small_farm_1",
+    "processors": "FARM_PLAINS",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_animal_pen_1",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_animal_pen_2",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_animal_pen_3",
+    "processors": "EMPTY",
+    "weight": 5
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_accessory_1",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_meeting_point_4",
+    "processors": "MOSSIFY_70_PERCENT",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/houses/plains_meeting_point_5",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "empty",
+    "weight": 10
+   }
+  ],
+  "fallback": "village/plains/terminators",
+  "projection": "rigid"
+ },
+ "village/plains/streets": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/corner_01",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/corner_02",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/corner_03",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_01",
+    "processors": "STREET_PLAINS",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_02",
+    "processors": "STREET_PLAINS",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_03",
+    "processors": "STREET_PLAINS",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_04",
+    "processors": "STREET_PLAINS",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_05",
+    "processors": "STREET_PLAINS",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/straight_06",
+    "processors": "STREET_PLAINS",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_01",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_02",
+    "processors": "STREET_PLAINS",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_03",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_04",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_05",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/crossroad_06",
+    "processors": "STREET_PLAINS",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/streets/turn_01",
+    "processors": "STREET_PLAINS",
+    "weight": 3
+   }
+  ],
+  "fallback": "village/plains/terminators",
+  "projection": "terrain_matching"
+ },
+ "village/plains/terminators": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_01",
+    "processors": "STREET_PLAINS",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_02",
+    "processors": "STREET_PLAINS",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_03",
+    "processors": "STREET_PLAINS",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_04",
+    "processors": "STREET_PLAINS",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "terrain_matching"
+ },
+ "village/plains/town_centers": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/town_centers/plains_fountain_01",
+    "processors": "MOSSIFY_20_PERCENT",
+    "weight": 50
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/town_centers/plains_meeting_point_1",
+    "processors": "MOSSIFY_20_PERCENT",
+    "weight": 50
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/town_centers/plains_meeting_point_2",
+    "processors": "EMPTY",
+    "weight": 50
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/town_centers/plains_meeting_point_3",
+    "processors": "MOSSIFY_70_PERCENT",
+    "weight": 50
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/plains/trees": {
+  "elements": [
+   {
+    "feature": "OAK",
+    "kind": "feature",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/plains/villagers": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/savanna/decor": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/savanna/savanna_lamp_post_01",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "feature": "ACACIA",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_HAY",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_MELON",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "kind": "empty",
+    "weight": 4
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/savanna/houses": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_3",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_4",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_5",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_6",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_7",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_house_8",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_medium_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_medium_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_butchers_shop_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_butchers_shop_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_tool_smith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_fletcher_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_shepherd_1",
+    "processors": "EMPTY",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_armorer_1",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_fisher_cottage_1",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_tannery_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_cartographer_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_library_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_mason_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_weaponsmith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_weaponsmith_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_temple_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_temple_2",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_large_farm_1",
+    "processors": "FARM_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_large_farm_2",
+    "processors": "FARM_SAVANNA",
+    "weight": 6
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_small_farm",
+    "processors": "FARM_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_animal_pen_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_animal_pen_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/houses/savanna_animal_pen_3",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "empty",
+    "weight": 5
+   }
+  ],
+  "fallback": "village/savanna/terminators",
+  "projection": "rigid"
+ },
+ "village/savanna/streets": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/corner_01",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/corner_03",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_02",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_04",
+    "processors": "STREET_SAVANNA",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_05",
+    "processors": "STREET_SAVANNA",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_06",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_08",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_09",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_10",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/straight_11",
+    "processors": "STREET_SAVANNA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_02",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_03",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_04",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_05",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_06",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/crossroad_07",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/split_01",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/split_02",
+    "processors": "STREET_SAVANNA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/streets/turn_01",
+    "processors": "STREET_SAVANNA",
+    "weight": 3
+   }
+  ],
+  "fallback": "village/savanna/terminators",
+  "projection": "terrain_matching"
+ },
+ "village/savanna/terminators": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_01",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_02",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_03",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_04",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/terminators/terminator_05",
+    "processors": "STREET_SAVANNA",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "terrain_matching"
+ },
+ "village/savanna/town_centers": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/savanna/town_centers/savanna_meeting_point_1",
+    "processors": "EMPTY",
+    "weight": 100
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/town_centers/savanna_meeting_point_2",
+    "processors": "EMPTY",
+    "weight": 50
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/town_centers/savanna_meeting_point_3",
+    "processors": "EMPTY",
+    "weight": 150
+   },
+   {
+    "kind": "legacy",
+    "location": "village/savanna/town_centers/savanna_meeting_point_4",
+    "processors": "EMPTY",
+    "weight": 150
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/savanna/trees": {
+  "elements": [
+   {
+    "feature": "ACACIA",
+    "kind": "feature",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/savanna/villagers": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/snowy/decor": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/snowy/snowy_lamp_post_01",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/snowy_lamp_post_02",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/snowy_lamp_post_03",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "feature": "SPRUCE",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_SNOW",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_ICE",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "kind": "empty",
+    "weight": 9
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/snowy/houses": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_3",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_4",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_5",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_6",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_7",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_small_house_8",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_medium_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_medium_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_medium_house_3",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_butchers_shop_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_butchers_shop_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_tool_smith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_fletcher_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_shepherds_house_1",
+    "processors": "EMPTY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_armorer_house_1",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_armorer_house_2",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_fisher_cottage",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_tannery_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_cartographer_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_library_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_masons_house_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_masons_house_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_weapon_smith_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_temple_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_farm_1",
+    "processors": "FARM_SNOWY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_farm_2",
+    "processors": "FARM_SNOWY",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_animal_pen_1",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/houses/snowy_animal_pen_2",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "empty",
+    "weight": 6
+   }
+  ],
+  "fallback": "village/snowy/terminators",
+  "projection": "rigid"
+ },
+ "village/snowy/streets": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/corner_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/corner_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/corner_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/square_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_06",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/straight_08",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/crossroad_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/crossroad_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/crossroad_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/crossroad_05",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/crossroad_06",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/streets/turn_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 3
+   }
+  ],
+  "fallback": "village/snowy/terminators",
+  "projection": "terrain_matching"
+ },
+ "village/snowy/terminators": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "terrain_matching"
+ },
+ "village/snowy/town_centers": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/snowy/town_centers/snowy_meeting_point_1",
+    "processors": "EMPTY",
+    "weight": 100
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/town_centers/snowy_meeting_point_2",
+    "processors": "EMPTY",
+    "weight": 50
+   },
+   {
+    "kind": "legacy",
+    "location": "village/snowy/town_centers/snowy_meeting_point_3",
+    "processors": "EMPTY",
+    "weight": 150
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/snowy/trees": {
+  "elements": [
+   {
+    "feature": "SPRUCE",
+    "kind": "feature",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/snowy/villagers": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/taiga/decor": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_lamp_post_1",
+    "processors": "EMPTY",
+    "weight": 10
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_1",
+    "processors": "EMPTY",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_2",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_3",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_4",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_5",
+    "processors": "EMPTY",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/taiga_decoration_6",
+    "processors": "EMPTY",
+    "weight": 1
+   },
+   {
+    "feature": "SPRUCE",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PINE",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PILE_PUMPKIN",
+    "kind": "feature",
+    "weight": 2
+   },
+   {
+    "feature": "PATCH_TAIGA_GRASS",
+    "kind": "feature",
+    "weight": 4
+   },
+   {
+    "feature": "PATCH_BERRY_BUSH",
+    "kind": "feature",
+    "weight": 1
+   },
+   {
+    "kind": "empty",
+    "weight": 4
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/taiga/houses": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_house_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_house_3",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_house_4",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_house_5",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_medium_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_medium_house_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_medium_house_3",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_medium_house_4",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_butcher_shop_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_tool_smith_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_fletcher_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_shepherds_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_armorer_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_armorer_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_fisher_cottage_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 3
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_tannery_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_cartographer_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_library_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_masons_house_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_weaponsmith_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_weaponsmith_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_temple_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_large_farm_1",
+    "processors": "FARM_TAIGA",
+    "weight": 6
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_large_farm_2",
+    "processors": "FARM_TAIGA",
+    "weight": 6
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_small_farm_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/houses/taiga_animal_pen_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 2
+   },
+   {
+    "kind": "empty",
+    "weight": 6
+   }
+  ],
+  "fallback": "village/taiga/terminators",
+  "projection": "rigid"
+ },
+ "village/taiga/streets": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/corner_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/corner_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/corner_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_05",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 7
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/straight_06",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 4
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_05",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/crossroad_06",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 2
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/streets/turn_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 3
+   }
+  ],
+  "fallback": "village/taiga/terminators",
+  "projection": "terrain_matching"
+ },
+ "village/taiga/terminators": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_01",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_02",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_03",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   },
+   {
+    "kind": "legacy",
+    "location": "village/plains/terminators/terminator_04",
+    "processors": "STREET_SNOWY_OR_TAIGA",
+    "weight": 1
+   }
+  ],
+  "fallback": "empty",
+  "projection": "terrain_matching"
+ },
+ "village/taiga/town_centers": {
+  "elements": [
+   {
+    "kind": "legacy",
+    "location": "village/taiga/town_centers/taiga_meeting_point_1",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 49
+   },
+   {
+    "kind": "legacy",
+    "location": "village/taiga/town_centers/taiga_meeting_point_2",
+    "processors": "MOSSIFY_10_PERCENT",
+    "weight": 49
+   }
+  ],
+  "fallback": "empty",
+  "projection": "rigid"
+ },
+ "village/taiga/villagers": {
+  "elements": [],
+  "fallback": "empty",
+  "projection": "rigid"
+ }
+}

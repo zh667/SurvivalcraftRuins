@@ -44,27 +44,51 @@ public sealed class RuinsSaveData
     public List<PendingChest> Chests = new();
 
     /// <summary>
-    /// Density this world was generated with, frozen on first visit so that
-    /// changing the setting later cannot re-roll a world mid-exploration.
+    /// Density in force when this save was last written. Recorded for support
+    /// and for the settings screen; it no longer constrains anything, because
+    /// the ledger — not the density setting — decides what gets built.
     /// </summary>
     public float DensityScale;
 
     /// <summary>
-    /// Placement table this world uses. 0 marks a save written before the
-    /// rebalance; such worlds are pinned to layout 1 (the pre-0.5 grid) so the
-    /// structures already half-written into their explored edge stay complete.
+    /// Placement table generation that last wrote chunks here. Kept for
+    /// diagnostics and to notice the first time a world meets a new table.
     /// </summary>
     public int LayoutVersion;
+
+    /// <summary>
+    /// True once this world is known to hold land generated under a different
+    /// placement table than the current one — including land generated before
+    /// the mod was installed at all. Sticky: a mixed world stays mixed, because
+    /// its old frontier is still out there waiting to be walked into.
+    /// </summary>
+    public bool MixedLand;
+
+    /// <summary>
+    /// Encoded <see cref="LedgerRecord"/> lines: every candidate this world has
+    /// ever ruled on. See <see cref="StructureLedger"/>.
+    /// </summary>
+    public List<string> Ledger = new();
 }
 
 /// <summary>Adapts the game's terrain generator to the testable sampler interface.</summary>
 public sealed class GeneratorSampler : IWorldSampler
 {
     private readonly ITerrainContentsGenerator m_generator;
+    private readonly TerrainSurface24? m_surface;
 
     public GeneratorSampler(ITerrainContentsGenerator generator)
     {
         m_generator = generator;
+        if (generator is TerrainContentsGenerator24 generator24)
+        {
+            m_surface = new TerrainSurface24(generator24);
+        }
+    }
+
+    public int GroundTop(int x, int z)
+    {
+        return m_surface?.GroundTop(x, z) ?? (int)MathF.Floor(m_generator.CalculateHeight(x, z));
     }
 
     public int OceanLevel => m_generator.OceanLevel;
@@ -98,8 +122,32 @@ public sealed class WorldState
     public required SubsystemPlayers Players { get; init; }
     public required SubsystemCreatureSpawn CreatureSpawn { get; init; }
     public required ITerrainContentsGenerator Generator { get; init; }
-    public required PlacementEngine Placement { get; init; }
+
+    /// <summary>
+    /// The placement table in force. Replaced wholesale when the player moves
+    /// the density slider; the terrain thread only ever reads the reference, so
+    /// a chunk already being generated finishes with the engine it started on.
+    /// </summary>
+    public required PlacementEngine Placement { get; set; }
+
     public required IReadOnlyDictionary<string, LootPool> LootPools { get; init; }
+
+    /// <summary>World seed and terrain sampler, kept so the engine can be rebuilt.</summary>
+    public required int WorldSeed { get; init; }
+    public required IWorldSampler Sampler { get; init; }
+
+    /// <summary>Everything this world has already committed to; the authority over the table.</summary>
+    public StructureLedger Ledger { get; init; } = new();
+
+    /// <summary>Tells whether a chunk is already on disk; null when the runtime cannot say.</summary>
+    public IChunkProbe? ChunkProbe { get; init; }
+
+    /// <summary>
+    /// Set when this world holds land from an older placement table. Only then
+    /// does a fresh candidate have to prove its whole footprint is untouched
+    /// ground before it may be built.
+    /// </summary>
+    public bool MixedLand { get; set; }
 
     // Markers discovered on the terrain thread, drained on the main thread.
     private static readonly JsonSerializerOptions s_jsonOptions = new() { IncludeFields = true };
@@ -119,10 +167,34 @@ public sealed class WorldState
     /// <summary>Guard post budget per variant; per-world so it dies with the world.</summary>
     private readonly ConcurrentDictionary<StructureVariant, GuardPost[]> m_guardPosts = new();
 
+    /// <summary>Structures rebuilt from ledger records, keyed by ledger key.</summary>
+    private readonly ConcurrentDictionary<string, StructureInstance?> m_rebuilt = new(StringComparer.Ordinal);
+
     public string SavePath => Storage.CombinePaths(GameInfo.DirectoryName, "SurvivalcraftRuins.json");
 
-    /// <summary>Density frozen into this world; the placement engine is built with it.</summary>
-    public float DensityScale { get; init; } = 1f;
+    /// <summary>Density the current placement engine was built with.</summary>
+    public float DensityScale { get; set; } = 1f;
+
+    /// <summary>
+    /// Rebuilds the placement table after the density slider moves. The engine
+    /// takes its density at construction, so without this the setting appeared
+    /// to do nothing until the world was next loaded — the worst possible
+    /// behaviour for a knob whose whole point is that players can feel it. What
+    /// is already in the ledger is untouched, so nothing standing moves.
+    /// </summary>
+    public void ApplyDensity(float density)
+    {
+        if (density == DensityScale)
+        {
+            return;
+        }
+        Placement = new PlacementEngine(WorldSeed, Sampler, Placement.Defs, density);
+        DensityScale = density;
+        // Land generated before the change was ruled on by the old table, so
+        // from now on a new candidate must prove its ground is untouched.
+        MixedLand = true;
+        Dirty = true;
+    }
 
     /// <summary>Placement table generation this world was created with.</summary>
     public int LayoutVersion { get; init; } = StructureRegistry.CurrentLayoutVersion;
@@ -174,6 +246,8 @@ public sealed class WorldState
                 Chests = new List<PendingChest>(PendingChests),
                 DensityScale = DensityScale,
                 LayoutVersion = LayoutVersion,
+                MixedLand = MixedLand,
+                Ledger = Ledger.Encode(),
             };
             string json = JsonSerializer.Serialize(data, s_jsonOptions);
             using var stream = Storage.OpenFile(SavePath, OpenFileMode.Create);
@@ -191,16 +265,148 @@ public sealed class WorldState
     /// Writes every structure part intersecting the chunk. Runs on the terrain
     /// thread right after content pass 3, so vanilla pass 4 decoration
     /// (plants, trees) happens around the finished structure.
+    ///
+    /// Two sources feed it, in this order: structures this world has already
+    /// committed to (the ledger), then candidates the current table proposes
+    /// that the world has never ruled on. A new candidate is only admitted if
+    /// the whole footprint is still unwritten ground, so a table change can add
+    /// buildings to virgin land without ever slicing one along the frontier.
     /// </summary>
     public void WriteChunk(TerrainChunk chunk)
     {
         int baseX = chunk.Coords.X * 16;
         int baseZ = chunk.Coords.Y * 16;
-        var instances = Placement.InstancesIntersecting(baseX, baseZ, baseX + 15, baseZ + 15);
-        foreach (var instance in instances)
+
+        foreach (var record in Ledger.RecordsForChunk(chunk.Coords.X, chunk.Coords.Y))
         {
+            var committed = Rebuild(record);
+            if (committed != null)
+            {
+                WriteInstancePart(chunk, committed, baseX, baseZ);
+            }
+        }
+
+        foreach (var instance in Placement.InstancesIntersecting(baseX, baseZ, baseX + 15, baseZ + 15))
+        {
+            string key = instance.LedgerKey;
+            if (Ledger.Contains(key))
+            {
+                continue;
+            }
+            if (!IsGroundUntouched(instance, chunk.Coords))
+            {
+                Ledger.Reject(key);
+                Dirty = true;
+                continue;
+            }
+            // Written whoever wins the record: chunk generation is single
+            // threaded on every path this hook runs on, and if that ever
+            // changes, both threads computed the same instance from the same
+            // table, so writing it twice puts down the same blocks. Skipping
+            // instead would leave this chunk's slice missing for good.
+            Ledger.Approve(key, instance);
+            Dirty = true;
             WriteInstancePart(chunk, instance, baseX, baseZ);
         }
+    }
+
+    /// <summary>
+    /// True when no chunk under the instance has been generated yet, so the
+    /// whole building can still be written as its chunks come up. Worlds that
+    /// have only ever seen the current table skip the check: every chunk of
+    /// theirs already ruled on this candidate when it was generated.
+    /// </summary>
+    private bool IsGroundUntouched(StructureInstance instance, Point2 generating)
+    {
+        if (!MixedLand || ChunkProbe == null)
+        {
+            return true;
+        }
+        return StructureLedger.FootprintUntouched(
+            instance.WorldMinX, instance.WorldMinZ, instance.WorldMaxX, instance.WorldMaxZ,
+            generating.X, generating.Y, ChunkProbe);
+    }
+
+    /// <summary>
+    /// Rebuilds a committed structure from its own record. The shape comes back
+    /// from the variant's provider and the recorded seed, so it survives any
+    /// change to the placement table; only editing a builder or a template can
+    /// still change what an existing structure looks like.
+    /// </summary>
+    private StructureInstance? Rebuild(LedgerRecord record)
+    {
+        if (m_rebuilt.TryGetValue(record.Key, out var cached))
+        {
+            return cached;
+        }
+        StructureInstance? instance = null;
+        try
+        {
+            foreach (var def in Placement.Defs)
+            {
+                if (!string.Equals(def.Name, record.Def, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                foreach (var variant in def.Variants)
+                {
+                    if (!string.Equals(variant.Name, record.Variant, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                    if (variant.SitedProvider != null)
+                    {
+                        // Laid out against the terrain again, which is
+                        // deterministic, so it comes back where it was.
+                        var sited = variant.SitedProvider(
+                            new SiteRequest(record.Seed, record.OriginX, record.OriginZ, Sampler));
+                        if (sited == null)
+                        {
+                            Log.Warning($"[Ruins] Ledger entry '{record.Key}' no longer fits its site.");
+                            break;
+                        }
+                        if (sited.OriginY != record.OriginY)
+                        {
+                            Log.Warning($"[Ruins] Ledger entry '{record.Key}' rebuilt at height {sited.OriginY}, "
+                                + $"recorded {record.OriginY}; the terrain generator must have changed.");
+                        }
+                        instance = new StructureInstance
+                        {
+                            Def = def,
+                            Variant = variant,
+                            Data = sited.Data,
+                            OriginX = record.OriginX,
+                            OriginY = sited.OriginY,
+                            OriginZ = record.OriginZ,
+                            InstanceSeed = record.Seed,
+                        };
+                        break;
+                    }
+                    instance = new StructureInstance
+                    {
+                        Def = def,
+                        Variant = variant,
+                        Data = variant.Provider(record.Seed),
+                        OriginX = record.OriginX,
+                        OriginY = record.OriginY,
+                        OriginZ = record.OriginZ,
+                        InstanceSeed = record.Seed,
+                    };
+                    break;
+                }
+                break;
+            }
+            if (instance == null)
+            {
+                Log.Warning($"[Ruins] Ledger entry '{record.Key}' names a structure this build does not have.");
+            }
+        }
+        catch (Exception exception)
+        {
+            Log.Warning($"[Ruins] Rebuilding ledger entry '{record.Key}' failed: {exception.Message}");
+        }
+        m_rebuilt[record.Key] = instance;
+        return instance;
     }
 
     private void WriteInstancePart(TerrainChunk chunk, StructureInstance instance, int baseX, int baseZ)
@@ -214,6 +420,10 @@ public sealed class WorldState
         if (def.Anchor is AnchorKind.Land or AnchorKind.Coast)
         {
             WriteFoundation(chunk, instance, baseX, baseZ);
+        }
+        if (data.SitePrep.Count > 0)
+        {
+            PrepareSite(chunk, instance, baseX, baseZ);
         }
 
         var sortedChests = s_sortedChests.GetOrAdd(data, static d =>
@@ -269,7 +479,9 @@ public sealed class WorldState
             if (blockName == "ChestBlock")
             {
                 int chestIndex = Array.FindIndex(sortedChests, m => m.X == cell.X && m.Y == cell.Y && m.Z == cell.Z);
-                string pool = ResolveChestPool(variant, chestIndex);
+                string pool = chestIndex >= 0 && sortedChests[chestIndex].Pool is { Length: > 0 } own
+                    ? own
+                    : ResolveChestPool(variant, chestIndex);
                 EnqueueContainer(instance, wx, wy, wz, pool, "Chest");
             }
             else if (blockName == "DispenserBlock" && variant.DispenserPool != null)
@@ -335,6 +547,56 @@ public sealed class WorldState
             return variant.ChestPools[variant.ChestPools.Count - 1];
         }
         return variant.ChestPools[chestIndex];
+    }
+
+    /// <summary>
+    /// The structure's per-column ground work inside this chunk: clear the
+    /// box a building stands in (or only the plants, above a street), then
+    /// fill foundation from the ground up to its floor.
+    /// </summary>
+    private static void PrepareSite(TerrainChunk chunk, StructureInstance instance, int baseX, int baseZ)
+    {
+        var data = instance.Data;
+        int oy = instance.OriginY;
+        foreach (var prep in data.SitePrep)
+        {
+            int wx = instance.OriginX + prep.X;
+            int wz = instance.OriginZ + prep.Z;
+            if (wx < baseX || wx > baseX + 15 || wz < baseZ || wz > baseZ + 15)
+            {
+                continue;
+            }
+            int lx = wx - baseX;
+            int lz = wz - baseZ;
+            if (prep.ClearTop >= prep.ClearBottom)
+            {
+                int y0 = Math.Max(1, oy + prep.ClearBottom);
+                int y1 = Math.Min(254, oy + prep.ClearTop);
+                for (int y = y0; y <= y1; y++)
+                {
+                    int contents = Game.Terrain.ExtractContents(chunk.GetCellValueFast(lx, y, lz));
+                    if (contents != 0 && (!prep.CoverOnly || GroundCover.IsCover(contents)))
+                    {
+                        chunk.SetCellValueFast(lx, y, lz, 0);
+                    }
+                }
+            }
+            if (prep.FoundationTop != SitePrep.None)
+            {
+                var entry = data.Palette[prep.FoundationPalette];
+                int value = BlockResolver.MakeValue(entry.BlockName, entry.Data);
+                int top = Math.Min(254, oy + prep.FoundationTop);
+                int bottom = Math.Max(1, top - Village.VillageBuilder.MaxFoundationDepth);
+                for (int y = top; y >= bottom; y--)
+                {
+                    if (!GroundCover.IsPassThrough(Game.Terrain.ExtractContents(chunk.GetCellValueFast(lx, y, lz))))
+                    {
+                        break;
+                    }
+                    chunk.SetCellValueFast(lx, y, lz, value);
+                }
+            }
+        }
     }
 
     private void WriteFoundation(TerrainChunk chunk, StructureInstance instance, int baseX, int baseZ)

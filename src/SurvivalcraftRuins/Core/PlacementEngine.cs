@@ -13,6 +13,13 @@ public interface IWorldSampler
 
     /// <summary>Biome humidity on the game's 0..15 scale.</summary>
     int Humidity(float x, float z) => 8;
+
+    /// <summary>
+    /// Topmost solid cell of a column, water excluded; below OceanLevel means
+    /// the column is under water. Defaults to the smooth height field, which is
+    /// what a test world is made of; the game sampler answers exactly.
+    /// </summary>
+    int GroundTop(int x, int z) => (int)MathF.Floor(Height(x, z));
 }
 
 public sealed class StructureInstance
@@ -24,6 +31,12 @@ public sealed class StructureInstance
     public required int OriginY { get; init; }
     public required int OriginZ { get; init; }
     public required int InstanceSeed { get; init; }
+
+    /// <summary>Grid cell this candidate was rolled in; identifies it in the world ledger.</summary>
+    public int CellX { get; init; }
+    public int CellZ { get; init; }
+
+    public string LedgerKey => StructureLedger.MakeKey(Def.Name, CellX, CellZ);
 
     public int WorldMinX => OriginX + Data.MinX;
     public int WorldMaxX => OriginX + Data.MaxX;
@@ -64,10 +77,14 @@ public sealed class PlacementEngine
     /// </summary>
     public const int DefaultSiteAttempts = 8;
 
+    /// <summary>Settlement slots try this many times more spots (cheap dry-land check first).</summary>
+    public const int SettlementAttemptFactor = 4;
+
     private readonly int m_seed;
     private readonly IWorldSampler m_sampler;
     private readonly IReadOnlyList<StructureDef> m_defs;
     private readonly float m_densityScale;
+    private readonly float m_separationScale;
     private readonly int m_siteAttempts;
     private readonly ConcurrentDictionary<(int, int, int), StructureInstance?> m_cache = new();
 
@@ -81,9 +98,13 @@ public sealed class PlacementEngine
         m_seed = seed;
         m_sampler = sampler;
         m_defs = defs;
-        m_densityScale = Math.Clamp(densityScale, 0f, 4f);
+        m_densityScale = Math.Clamp(densityScale, RuinsSettings.MinScale, RuinsSettings.MaxScale);
+        m_separationScale = m_densityScale <= 1f ? 1f : 1f / MathF.Sqrt(m_densityScale);
         m_siteAttempts = Math.Clamp(siteAttempts, 1, 32);
     }
+
+    /// <summary>The slot table this engine was built with, in priority order.</summary>
+    public IReadOnlyList<StructureDef> Defs => m_defs;
 
     public List<StructureInstance> InstancesIntersecting(int minX, int minZ, int maxX, int maxZ)
     {
@@ -91,10 +112,11 @@ public sealed class PlacementEngine
         for (int defIndex = 0; defIndex < m_defs.Count; defIndex++)
         {
             int cellSpan = m_defs[defIndex].GridChunks * 16;
-            int cellMinX = FloorDiv(minX - MaxFootprint, cellSpan);
-            int cellMaxX = FloorDiv(maxX + MaxFootprint, cellSpan);
-            int cellMinZ = FloorDiv(minZ - MaxFootprint, cellSpan);
-            int cellMaxZ = FloorDiv(maxZ + MaxFootprint, cellSpan);
+            int footprint = m_defs[defIndex].Footprint;
+            int cellMinX = FloorDiv(minX - footprint, cellSpan);
+            int cellMaxX = FloorDiv(maxX + footprint, cellSpan);
+            int cellMinZ = FloorDiv(minZ - footprint, cellSpan);
+            int cellMaxZ = FloorDiv(maxZ + footprint, cellSpan);
             for (int cx = cellMinX; cx <= cellMaxX; cx++)
             {
                 for (int cz = cellMinZ; cz <= cellMaxZ; cz++)
@@ -110,6 +132,23 @@ public sealed class PlacementEngine
         return result;
     }
 
+    /// <summary>
+    /// The density setting as this slot feels it. Raising the setting only ever
+    /// turns cells that rolled empty into cells that hold something: the per
+    /// cell hash does not move, so every structure already standing in a world
+    /// keeps its exact place and shape.
+    /// </summary>
+    public float DensityFactor(StructureDef def)
+    {
+        if (m_densityScale <= 0f)
+        {
+            return 0f;
+        }
+        return def.DensityExponent == 1f
+            ? m_densityScale
+            : MathF.Pow(m_densityScale, def.DensityExponent);
+    }
+
     public StructureInstance? GetInstance(int defIndex, int cellX, int cellZ)
     {
         return m_cache.GetOrAdd((defIndex, cellX, cellZ), key => ComputeInstance(key.Item1, key.Item2, key.Item3));
@@ -119,11 +158,16 @@ public sealed class PlacementEngine
     {
         var def = m_defs[defIndex];
         uint hash = DeterministicHash.Mix(m_seed, def.Salt, cellX, cellZ);
-        if (DeterministicHash.ToUnitFloat(hash) >= def.Chance * m_densityScale)
+        if (DeterministicHash.ToUnitFloat(hash) >= def.Chance * DensityFactor(def))
         {
             return null;
         }
         int instanceSeed = (int)DeterministicHash.Mix(hash, 0x5EEDu);
+        if (def.Anchor == AnchorKind.Settlement)
+        {
+            var settled = ComputeSettlement(def, cellX, cellZ, hash, instanceSeed);
+            return settled == null || CrowdedOut(defIndex, settled) ? null : settled;
+        }
         var variant = def.Variants[(int)(DeterministicHash.Mix(hash, 0x7A11u) % (uint)def.Variants.Count)];
 
         // Variants that declare their extent get sited before they are built,
@@ -210,15 +254,25 @@ public sealed class PlacementEngine
             OriginY = oy,
             OriginZ = oz,
             InstanceSeed = instanceSeed,
+            CellX = cellX,
+            CellZ = cellZ,
         };
 
-        // Higher-priority defs (lower index) win on overlap and on the keep-out
-        // radius; suppression is deterministic because it only ever consults
-        // strictly lower indices, so the dependency graph stays acyclic.
+        return CrowdedOut(defIndex, instance) ? null : instance;
+    }
+
+    /// <summary>
+    /// Higher-priority defs (lower index) win on overlap and on the keep-out
+    /// radius; suppression is deterministic because it only ever consults
+    /// strictly lower indices, so the dependency graph stays acyclic.
+    /// </summary>
+    private bool CrowdedOut(int defIndex, StructureInstance instance)
+    {
+        var def = m_defs[defIndex];
         for (int higher = 0; higher < defIndex; higher++)
         {
             int span = m_defs[higher].GridChunks * 16;
-            int reach = MaxFootprint + Math.Max(def.SeparationRadius, m_defs[higher].SeparationRadius);
+            int reach = m_defs[higher].Footprint + Math.Max(def.SeparationRadius, m_defs[higher].SeparationRadius);
             int hMinX = FloorDiv(instance.WorldMinX - reach, span);
             int hMaxX = FloorDiv(instance.WorldMaxX + reach, span);
             int hMinZ = FloorDiv(instance.WorldMinZ - reach, span);
@@ -235,19 +289,92 @@ public sealed class PlacementEngine
                     if (other.IntersectsColumnRange(
                             instance.WorldMinX, instance.WorldMinZ, instance.WorldMaxX, instance.WorldMaxZ))
                     {
-                        return null;
+                        return true;
                     }
-                    int keepOut = Math.Max(def.SeparationRadius, other.Def.SeparationRadius);
+                    // Keep-out shrinks as density rises. It exists to leave a
+                    // landmark its clear approach, but a player who asks for a
+                    // crowded world is asking for exactly that; left fixed, the
+                    // extra landmarks a high setting adds delete more small
+                    // finds than the setting creates.
+                    int keepOut = (int)MathF.Round(
+                        Math.Max(def.SeparationRadius, other.Def.SeparationRadius) * m_separationScale);
                     long dx = instance.CenterX - other.CenterX;
                     long dz = instance.CenterZ - other.CenterZ;
                     if (dx * dx + dz * dz < (long)keepOut * keepOut)
                     {
-                        return null;
+                        return true;
                     }
                 }
             }
         }
-        return instance;
+        return false;
+    }
+
+    /// <summary>
+    /// Sites a settlement: a centre column in the middle half of the cell, a
+    /// variant that suits the climate there, and a layout the terrain accepts.
+    /// Each attempt is a whole layout against real ground, so this is the
+    /// expensive kind of slot; it is rare enough that it does not matter, and
+    /// its result is cached per cell like every other.
+    /// </summary>
+    private StructureInstance? ComputeSettlement(StructureDef def, int cellX, int cellZ, uint hash, int instanceSeed)
+    {
+        int cellSpan = def.GridChunks * 16;
+        int margin = cellSpan / 4;
+        int range = Math.Max(1, cellSpan / 2);
+        int ocean = m_sampler.OceanLevel;
+        // A layout costs thousands of ground probes, a centre column one: try
+        // many more spots than other slots do, and only lay out on dry land.
+        for (int attempt = 0; attempt < m_siteAttempts * SettlementAttemptFactor; attempt++)
+        {
+            uint spin = attempt == 0 ? hash : DeterministicHash.Mix(hash, 0x51E0u + (uint)attempt);
+            int cx = cellX * cellSpan + margin + (int)(DeterministicHash.Mix(spin, 11u) % (uint)range);
+            int cz = cellZ * cellSpan + margin + (int)(DeterministicHash.Mix(spin, 13u) % (uint)range);
+            if (m_sampler.GroundTop(cx, cz) <= ocean)
+            {
+                continue;
+            }
+            int temperature = m_sampler.Temperature(cx, cz);
+            int humidity = m_sampler.Humidity(cx, cz);
+            if (def.Biome != null && !def.Biome.Matches(temperature, humidity))
+            {
+                continue;
+            }
+            uint pick = DeterministicHash.Mix(spin, 0x7A11u);
+            var variant = def.PickVariant != null
+                ? def.PickVariant(temperature, humidity, pick)
+                : def.Variants[(int)(pick % (uint)def.Variants.Count)];
+            if (variant?.SitedProvider == null)
+            {
+                continue;
+            }
+            SitedStructure? sited;
+            try
+            {
+                sited = variant.SitedProvider(new SiteRequest(instanceSeed, cx, cz, m_sampler));
+            }
+            catch (Exception)
+            {
+                sited = null;
+            }
+            if (sited == null)
+            {
+                continue;
+            }
+            return new StructureInstance
+            {
+                Def = def,
+                Variant = variant,
+                Data = sited.Data,
+                OriginX = cx,
+                OriginY = sited.OriginY,
+                OriginZ = cz,
+                InstanceSeed = instanceSeed,
+                CellX = cellX,
+                CellZ = cellZ,
+            };
+        }
+        return null;
     }
 
     private int? ComputeAnchorY(StructureDef def, StructureVariant variant, StructureBounds data, int ox, int oz)

@@ -17,12 +17,12 @@ SCAPI_DIR="${SCAPI_DIR:-/home/dev/projects/[Windows]SurvivalcraftAPI_1.9.2.1/}"
 mkdir -p "$OUT"
 
 package_one() {
-    local runtime_dir="$1" ext="$2"
+    local runtime_dir="$1" ext="$2" flavor="$3"
     # No version in the file name: players drop the same file into Mods/ every
     # time and the version is read from modinfo.json (and shown on the release
     # page). A versioned name leaves stale copies behind that both load.
     local pkg="$OUT/SurvivalcraftRuins.$ext"
-    dotnet build "$SRC" -c Release "-p:SurvivalcraftDir=$runtime_dir" > /dev/null
+    dotnet build "$SRC" -c Release "-p:SurvivalcraftDir=$runtime_dir" "-p:RuinsFlavor=$flavor" > /dev/null
     local stage
     stage=$(mktemp -d)
     cp "$SRC/bin/Release/net10.0/SurvivalcraftRuins.dll" "$stage/"
@@ -78,8 +78,8 @@ print('$pkg'.split('/')[-1], f'v$VERSION, {len(names)} entries OK')
 }
 
 if [ -f "${SCAPI_DIR}Survivalcraft.dll" ]; then
-    package_one "$SCAPI_DIR" scmod
+    package_one "$SCAPI_DIR" scmod scapi
 else
     echo "WARN: SCAPI runtime not found at $SCAPI_DIR — skipping .scmod" >&2
 fi
-package_one "$NET_DIR" netmod
+package_one "$NET_DIR" netmod net
