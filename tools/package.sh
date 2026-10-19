@@ -12,7 +12,9 @@ SRC="$ROOT/src/SurvivalcraftRuins"
 VERSION=$(grep -oP '"Version": "\K[^"]+' "$SRC/modinfo.json" | head -1)   # reported only, not in the file name
 OUT="$ROOT/artifacts"
 NET_DIR="${NET_DIR:-$HOME/sc-libs/}"
-SCAPI_DIR="${SCAPI_DIR:-/home/dev/projects/[Windows]SurvivalcraftAPI_1.9.2.1/}"
+# Plugin builds compile against API 1.9.5.1 (DLLs only, copied from the Windows
+# install): the Mod Settings page needs 1.9.3+.
+SCAPI_DIR="${SCAPI_DIR:-/home/dev/projects/SCAPI-1.9.5.1-ref/}"
 
 mkdir -p "$OUT"
 
@@ -49,6 +51,11 @@ PYEOF
         cp "$SRC/modinfo.json" "$stage/"
     fi
     cp -r "$SRC/Assets" "$stage/Assets"
+    if [ "$ext" = netmod ]; then
+        # Language files only label the plugin runtime's Mod Settings page;
+        # Net 2.4 has no such page and loads mod language files its own way.
+        rm -rf "$stage/Assets/Lang"
+    fi
     rm -f "$pkg"
     python3 - "$stage" "$pkg" <<'EOF'
 import os, sys, zipfile

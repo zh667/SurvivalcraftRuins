@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Render village dumps (from VillagePreviewTests) as top-down and isometric PNGs.
 
-Usage: render_preview.py <dump-dir> <out-dir>
+Usage: render_preview.py <dump-dir> <out-dir> [<Content.zip>]
+
+With Survivalcraft's Content.zip, block colours come from its texture atlas
+and palette (painted blocks included), as in compare_colors.py.
 
 The dumps hold terrain from the game's first two generation passes plus the
 mod's village, so the natural ground is bare rock there; it is tinted by the
@@ -43,15 +46,15 @@ def load(path):
         cols = {}
         climate = {}
         raw = f.read()
-    stride = 2 + h * 3
+    stride = 2 + h * 6
     for x in range(w):
         for z in range(d):
             o = (x * d + z) * stride
             climate[(x, z)] = (raw[o], raw[o + 1])
             column = []
             for y in range(h):
-                c, data = struct.unpack_from("<HB", raw, o + 2 + y * 3)
-                column.append(c)
+                c, data = struct.unpack_from("<Hi", raw, o + 2 + y * 6)
+                column.append((c, data))
             cols[(x, z)] = column
     return w, h, d, y0, ocean, cols, climate
 
@@ -68,10 +71,17 @@ def natural_colour(t, hum, depth_from_top):
     return (92, 152, 70)
 
 
-def block_colour(names, contents, t, hum, depth):
+SC = None
+
+
+def block_colour(names, cell, t, hum, depth):
+    contents, data = cell
     if contents in NATURAL:
         return natural_colour(t, hum, depth)
-    return COLOURS.get(names.get(str(contents), ""), (200, 90, 200))
+    name = names.get(str(contents), "")
+    if SC is not None:
+        return tuple(int(v) for v in SC.colour(name, data))
+    return COLOURS.get(name, (200, 90, 200))
 
 
 def top_down(path, w, h, d, y0, cols, climate, names):
@@ -82,7 +92,7 @@ def top_down(path, w, h, d, y0, cols, climate, names):
     for (x, z), column in cols.items():
         top = 0
         for y in range(h - 1, -1, -1):
-            if column[y] != 0:
+            if column[y][0] != 0:
                 top = y
                 break
         heights[(x, z)] = top
@@ -111,12 +121,12 @@ def isometric(path, w, h, d, y0, cols, climate, names):
     def solid(x, y, z):
         if x < 0 or z < 0 or x >= w or z >= d or y < 0 or y >= h:
             return False
-        return cols[(x, z)][y] != 0
+        return cols[(x, z)][y][0] != 0
 
     tops = {}
     for (x, z), column in cols.items():
         for y in range(h - 1, -1, -1):
-            if column[y] != 0:
+            if column[y][0] != 0:
                 tops[(x, z)] = y
                 break
     # Painter's order: back to front (x + z), bottom to top.
@@ -127,7 +137,7 @@ def isometric(path, w, h, d, y0, cols, climate, names):
             t, hum = climate[(x, z)]
             top = tops.get((x, z), 0)
             for y in range(h):
-                contents = column[y]
+                contents = column[y][0]
                 if contents == 0:
                     continue
                 up = solid(x, y + 1, z)
@@ -135,7 +145,7 @@ def isometric(path, w, h, d, y0, cols, climate, names):
                 front_left = solid(x, y, z + 1)
                 if up and front_left and front_right:
                     continue
-                r, g, bl = block_colour(names, contents, t, hum, top - y if contents in NATURAL else 0)
+                r, g, bl = block_colour(names, column[y], t, hum, top - y if contents in NATURAL else 0)
                 sx = (x - z) * a + d * a
                 sy = (x + z) * b + (h - y) * c
                 topface = [(sx, sy), (sx + a, sy + b), (sx, sy + 2 * b), (sx - a, sy + b)]
@@ -152,7 +162,12 @@ def isometric(path, w, h, d, y0, cols, climate, names):
 
 
 def main():
+    global SC
     dump_dir, out_dir = sys.argv[1], sys.argv[2]
+    if len(sys.argv) > 3:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import compare_colors
+        SC = compare_colors.Sc(sys.argv[3])
     os.makedirs(out_dir, exist_ok=True)
     names = json.load(open(os.path.join(dump_dir, "blocks.json")))
     for name in sorted(os.listdir(dump_dir)):

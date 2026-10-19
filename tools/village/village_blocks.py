@@ -39,6 +39,25 @@ def loot_pool(table):
     return LOOT.get(table, "village_house")
 
 
+# Pool for a chest the converter adds to a house that has none, by the
+# profession its Minecraft piece is named after.
+PROFESSIONS = [
+    ("armorer", "village_armorer"), ("butcher", "village_butcher"), ("cartographer", "village_cartographer"),
+    ("fisher", "village_fisher"), ("fletcher", "village_fletcher"), ("mason", "village_mason"),
+    ("shepherd", "village_shepherd"), ("tannery", "village_tannery"), ("temple", "village_temple"),
+    ("tool_smith", "village_toolsmith"), ("toolsmith", "village_toolsmith"),
+    ("weaponsmith", "village_weaponsmith"), ("weapon_smith", "village_weaponsmith"),
+]
+
+
+def house_pool(location):
+    name = location.rsplit("/", 1)[-1]
+    for key, pool in PROFESSIONS:
+        if key in name:
+            return pool
+    return "village_house"
+
+
 # Facing tables live in convert_nbt (see the note there).
 FACE = cn.FACE
 LOOK = cn.LOOK
@@ -56,9 +75,98 @@ STONE_PLATES = {"stone_pressure_plate", "polished_blackstone_pressure_plate",
                 "light_weighted_pressure_plate", "heavy_weighted_pressure_plate"}
 
 
+# Survivalcraft paint bits per block family (PaintedCubeBlock, StairsBlock,
+# SlabBlock, FenceBlock/FenceGateBlock .SetColor).
+def paint_cube(color):
+    return 1 | (color << 1)
+
+
+def paint_stairs(data, color):
+    return data | 0x20 | (color << 6)
+
+
+def paint_slab(data, color):
+    return data | 2 | (color << 2)
+
+
+def paint_fence(data, color):
+    return data | 0x10 | (color << 5)
+
+
+# Colour choices below were made by comparing average texture colours: each
+# Minecraft block's own texture against Survivalcraft's atlas, painted with
+# each of the 16 default palette colours where the block takes paint
+# (tools/village/compare_colors.py prints the table; docs/village-blocks.md
+# has the reasoning). Wood stays unpainted: Survivalcraft planks are already
+# as dark as spruce, and the palette has no warm mid tones to do oak or acacia
+# better. Where the palette has nothing close (saturated yellows), the hue is
+# kept rather than the distance minimised.
+TERRACOTTA = {
+    "terracotta": ("BricksBlock", 0), "red_terracotta": ("BricksBlock", 0),
+    "orange_terracotta": ("BricksBlock", 0), "brown_terracotta": ("BricksBlock", 0),
+    "white_terracotta": ("MarbleBlock", paint_cube(6)),
+    "yellow_terracotta": ("SandstoneBlock", paint_cube(4)),
+    "lime_terracotta": ("ClayBlock", paint_cube(13)),
+    "white_glazed_terracotta": ("BricksBlock", paint_cube(1)),
+    "light_blue_glazed_terracotta": ("BricksBlock", paint_cube(3)),
+    "yellow_glazed_terracotta": ("BricksBlock", paint_cube(4)),
+    "lime_glazed_terracotta": ("ClayBlock", paint_cube(5)),
+    "orange_glazed_terracotta": ("ClayBlock", 0),
+}
+PALE_SANDSTONE = 4      # smooth/cut sandstone is lighter than Survivalcraft's
+SMOOTH_STONE = 7        # light grey granite
+
+
 def _map(name, props, report):
     n = name.removeprefix("minecraft:")
     f = props.get("facing", "north")
+
+    # --- colours ---
+    if n in TERRACOTTA:
+        return TERRACOTTA[n]
+    if n.endswith("_wool"):
+        colour = n.removesuffix("_wool")
+        if colour == "white":
+            return ("MarbleBlock", paint_cube(0))
+        if colour == "light_gray":
+            return ("ClayBlock", 0)
+        if colour == "yellow":
+            return ("ClayBlock", paint_cube(4))
+        return ("ClayBlock", paint_cube(SC_COLOR.get(colour, 0)))
+    if n == "hay_block":
+        return ("PlanksBlock", paint_cube(4))
+    if n in ("diorite", "polished_diorite"):
+        return ("MarbleBlock", 0)
+    if n in ("diorite_stairs", "polished_diorite_stairs"):
+        return ("MarbleStairsBlock", LOOK[f] | (4 if props.get("half") == "top" else 0))
+    if n in ("diorite_slab", "polished_diorite_slab"):
+        return ("MarbleBlock", 0) if props.get("type") == "double" else ("MarbleSlabBlock", 1 if props.get("type") == "top" else 0)
+    if n == "diorite_wall":
+        return ("StoneFenceBlock", paint_fence(0, 0))
+    if n == "smooth_stone":
+        return ("GraniteBlock", paint_cube(SMOOTH_STONE))
+    if n == "smooth_stone_slab":
+        if props.get("type") == "double":
+            return ("GraniteBlock", paint_cube(SMOOTH_STONE))
+        return ("StoneSlabBlock", paint_slab(1 if props.get("type") == "top" else 0, SMOOTH_STONE))
+    if n in ("smooth_sandstone", "cut_sandstone", "chiseled_sandstone"):
+        return ("SandstoneBlock", paint_cube(PALE_SANDSTONE))
+    if n in ("smooth_sandstone_stairs", "cut_sandstone_stairs"):
+        return ("SandstoneStairsBlock", paint_stairs(LOOK[f] | (4 if props.get("half") == "top" else 0), PALE_SANDSTONE))
+    if n in ("smooth_sandstone_slab", "cut_sandstone_slab"):
+        if props.get("type") == "double":
+            return ("SandstoneBlock", paint_cube(PALE_SANDSTONE))
+        return ("SandstoneSlabBlock", paint_slab(1 if props.get("type") == "top" else 0, PALE_SANDSTONE))
+    if n == "sandstone_wall":
+        return ("StoneFenceBlock", paint_fence(0, PALE_SANDSTONE))
+    if n == "packed_ice":
+        return ("ClayBlock", paint_cube(3))
+    if n == "blue_ice":
+        return ("MarbleBlock", paint_cube(3))
+    if n == "granite":
+        return ("BricksBlock", 0)
+    if n == "granite_stairs":
+        return ("BrickStairsBlock", LOOK[f] | (4 if props.get("half") == "top" else 0))
 
     # --- fixed facing tables for blocks the converter already handles ---
     if n.endswith("_stairs"):
@@ -82,9 +190,9 @@ def _map(name, props, report):
     if n in ("grass_path", "dirt_path"):
         return ("GravelBlock", 0)
     if n == "snow":
-        return ("MarbleBlock", 1) if int(props.get("layers", "1")) >= 8 else ("SnowBlock", 0)
+        return ("ClayBlock", paint_cube(0)) if int(props.get("layers", "1")) >= 8 else ("SnowBlock", 0)
     if n == "snow_block":
-        return ("MarbleBlock", 1)                       # white-painted marble (1 | 0 << 1)
+        return ("ClayBlock", paint_cube(0))             # white clay: the closest white, and it never melts
     if n == "wheat":
         return ("RyeBlock", int(props.get("age", "0")) & 7)
     if n == "farmland":
@@ -139,6 +247,4 @@ def _map(name, props, report):
 
 
 def map_block(name, props, report):
-    if name.removeprefix("minecraft:") == "smooth_sandstone":
-        return ("SandstoneBlock", 0)
     return _map(name, props, report)

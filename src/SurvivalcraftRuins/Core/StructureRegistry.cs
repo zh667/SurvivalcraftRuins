@@ -564,9 +564,10 @@ public static class StructureRegistry
         var village = CreateVillageDef(villages);
         if (village != null)
         {
-            // After the sky and grand landmarks, ahead of everything that has
-            // to make room for it.
-            list.Insert(2, village);
+            // First: everything else makes room for a village. Behind the sky
+            // fortresses a good share of them was refused for one hanging
+            // over part of the site.
+            list.Insert(0, village);
         }
         return list;
     }
@@ -607,9 +608,8 @@ public static class StructureRegistry
         return new StructureDef
         {
             Name = "village",
-            GridChunks = 64,
-            // Measured on five real seeds: one village per ~7 km² of land.
-            Chance = 0.30f,
+            GridChunks = 40,
+            Chance = 0.45f,
             Anchor = AnchorKind.Settlement,
             Footprint = 176,
             SeparationRadius = 160,

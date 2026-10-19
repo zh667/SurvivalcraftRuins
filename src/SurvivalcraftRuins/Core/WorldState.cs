@@ -306,6 +306,11 @@ public sealed class WorldState
             // instead would leave this chunk's slice missing for good.
             Ledger.Approve(key, instance);
             Dirty = true;
+            if (instance.Def.Anchor == AnchorKind.Settlement)
+            {
+                Log.Information($"[Ruins] Village {instance.Variant.Name} at "
+                    + $"{instance.CenterX},{instance.OriginY},{instance.CenterZ}.");
+            }
             WriteInstancePart(chunk, instance, baseX, baseZ);
         }
     }
@@ -585,6 +590,12 @@ public sealed class WorldState
             {
                 var entry = data.Palette[prep.FoundationPalette];
                 int value = BlockResolver.MakeValue(entry.BlockName, entry.Data);
+                int cap = value;
+                if (prep.Capped)
+                {
+                    var capEntry = data.Palette[prep.CapPalette];
+                    cap = BlockResolver.MakeValue(capEntry.BlockName, capEntry.Data);
+                }
                 int top = Math.Min(254, oy + prep.FoundationTop);
                 int bottom = Math.Max(1, top - Village.VillageBuilder.MaxFoundationDepth);
                 for (int y = top; y >= bottom; y--)
@@ -593,7 +604,7 @@ public sealed class WorldState
                     {
                         break;
                     }
-                    chunk.SetCellValueFast(lx, y, lz, value);
+                    chunk.SetCellValueFast(lx, y, lz, y == top ? cap : value);
                 }
             }
         }

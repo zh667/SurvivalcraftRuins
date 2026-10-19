@@ -107,7 +107,7 @@ public class VillagePreviewTests
                         .GetCellValueFast(x0 + x - PlacementEngine.FloorDiv(x0 + x, 16) * 16, y0 + y,
                             z0 + z - PlacementEngine.FloorDiv(z0 + z, 16) * 16);
                     writer.Write((ushort)Terrain.ExtractContents(value));
-                    writer.Write((byte)Terrain.ExtractData(value));
+                    writer.Write(Terrain.ExtractData(value));
                 }
             }
         }

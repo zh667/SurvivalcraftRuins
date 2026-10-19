@@ -65,6 +65,9 @@ public sealed class VillageStyle
     public required IReadOnlyList<PaletteEntry> Palette { get; init; }
     public required int BridgePalette { get; init; }
     public required int FoundationPalette { get; init; }
+
+    /// <summary>Top of an embankment: grass, or sand in the desert.</summary>
+    public required int EmbankmentCapPalette { get; init; }
     public required VillagePiece[] Pieces { get; init; }
     public required VillageLayout[] Layouts { get; init; }
 
@@ -92,6 +95,7 @@ public sealed class VillageStyle
         var bridge = root.GetProperty("bridge");
         int bridgePalette = Add(bridge[0].GetString() ?? "PlanksBlock", bridge[1].GetInt32());
         int foundationPalette = Add(name == "desert" ? "SandBlock" : "DirtBlock", 0);
+        int capPalette = Add(name == "desert" ? "SandBlock" : "GrassBlock", 0);
 
         var pieces = new List<VillagePiece>();
         foreach (var p in root.GetProperty("pieces").EnumerateArray())
@@ -177,6 +181,7 @@ public sealed class VillageStyle
             Palette = palette,
             BridgePalette = bridgePalette,
             FoundationPalette = foundationPalette,
+            EmbankmentCapPalette = capPalette,
             Pieces = pieces.ToArray(),
             Layouts = layouts.ToArray(),
         };

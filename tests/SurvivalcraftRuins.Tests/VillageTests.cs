@@ -87,6 +87,32 @@ public class VillageAssetTests
         }
     }
 
+    /// <summary>
+    /// Minecraft keeps loot in a handful of workshops; here every enclosed
+    /// building gets a chest (farms, pens and open squares do not).
+    /// </summary>
+    [Fact]
+    public void HousesCarryChests()
+    {
+        foreach (var style in TestRegistry.Villages().Values)
+        {
+            int houses = 0, withChest = 0;
+            foreach (var piece in style.Pieces)
+            {
+                if (piece.Kind != VillagePieceKind.House)
+                {
+                    continue;
+                }
+                houses++;
+                if (piece.Chests.Length > 0)
+                {
+                    withChest++;
+                }
+            }
+            Assert.True(withChest * 10 >= houses * 7, $"{style.Name}: {withChest} of {houses} house pieces have a chest");
+        }
+    }
+
     [Fact]
     public void VillageSlotHasRoomInItsCell()
     {
@@ -202,8 +228,8 @@ public class VillageTerrainTests
     [Fact]
     public void BuildingsAcrossACliffAreLeftOut()
     {
-        // A 12-block step along x = 9.
-        var cliff = new Sampler { Top = (x, _) => x < 9 ? 70 : 82 };
+        // A 20-block step along x = 9: more than a building may straddle.
+        var cliff = new Sampler { Top = (x, _) => x < 9 ? 70 : 90 };
         int dropped = 0;
         for (int i = 0; i < Plains.Layouts.Length; i++)
         {
@@ -346,6 +372,31 @@ public class VillageWorldTests
         {
             villageCells.Add((village.OriginX + c.X, village.OriginY + c.Y, village.OriginZ + c.Z));
         }
+        // Foundation under any piece may stand in another's box: a decoration
+        // on the square gets ground raised under it, as Minecraft would.
+        var foundation = new HashSet<(int, int, int)>();
+        for (int p = 0; p < layout.Pieces.Length; p++)
+        {
+            var lp = layout.Pieces[p];
+            var piece = style.Pieces[lp.Ref];
+            if (!plan.Keep[p] || !piece.Rigid)
+            {
+                continue;
+            }
+            for (int x = 0; x < piece.SizeX; x++)
+            {
+                for (int z = 0; z < piece.SizeZ; z++)
+                {
+                    if (piece.FloorColumns[x + z * piece.SizeX])
+                    {
+                        for (int y = plan.Floors[p] - 1; y >= plan.Floors[p] - VillageBuilder.MaxFoundationDepth; y--)
+                        {
+                            foundation.Add((village.OriginX + lp.X + x, y, village.OriginZ + lp.Z + z));
+                        }
+                    }
+                }
+            }
+        }
         int floored = 0, buried = 0, floating = 0, houses = 0;
         for (int p = 0; p < layout.Pieces.Length; p++)
         {
@@ -381,7 +432,8 @@ public class VillageWorldTests
                         // building's own blocks may remain: no leftover hillside.
                         for (int y = plan.ClearFrom[p]; y < floor + piece.SizeY; y++)
                         {
-                            if (!villageCells.Contains((wx, y, wz)) && world.Contents(wx, y, wz) != 0)
+                            if (!villageCells.Contains((wx, y, wz)) && !foundation.Contains((wx, y, wz))
+                                && world.Contents(wx, y, wz) != 0)
                             {
                                 buried++;
                             }
@@ -462,51 +514,61 @@ public class VillageWorldTests
     }
 
     /// <summary>
-    /// How often villages turn up on real worlds. The plan was a village every
-    /// 6-8 km² of land: rarer than temples, because a village is a landmark.
-    /// Measured over land only: the area around the origin is two thirds sea.
+    /// How often villages turn up on real worlds, over land only (the area
+    /// around the origin is two thirds sea). A player who turns density to the
+    /// maximum should meet them about as often as in Minecraft, where a
+    /// village stands every half square kilometre or so of suitable land.
     /// </summary>
     [Fact]
-    public void VillagesAreLandmarkRare()
+    public void VillagesAreEasyToFindAndDensityScalesThem()
     {
-        int villages = 0;
-        double landKm2 = 0;
+        var perVillage = new Dictionary<float, double>();
         var styles = new Dictionary<string, int>();
-        foreach (int seed in new[] { 12345, -987654321, 20260820, 777, 31337 })
+        foreach (float density in new[] { 1f, 4f })
         {
-            var world = RealWorld.Create(seed);
-            var engine = new PlacementEngine(seed, world.Sampler, world.Defs);
-            int span = world.Defs[world.VillageIndex].GridChunks * 16;
-            int land = 0, samples = 4000;
-            var rng = new System.Random(seed);
-            for (int i = 0; i < samples; i++)
+            int villages = 0;
+            double landKm2 = 0;
+            foreach (int seed in new[] { 12345, -987654321, 20260820, 777, 31337 })
             {
-                if (world.Sampler.GroundTop(rng.Next(-4 * span, 4 * span), rng.Next(-4 * span, 4 * span)) > world.Sampler.OceanLevel)
+                var world = RealWorld.Create(seed);
+                var engine = new PlacementEngine(seed, world.Sampler, world.Defs, density);
+                int span = world.Defs[world.VillageIndex].GridChunks * 16;
+                int n = 10, land = 0, samples = 4000;
+                var rng = new System.Random(seed);
+                for (int i = 0; i < samples; i++)
                 {
-                    land++;
-                }
-            }
-            landKm2 += 64 * (span / 1000.0) * (span / 1000.0) * land / samples;
-            for (int cx = -4; cx < 4; cx++)
-            {
-                for (int cz = -4; cz < 4; cz++)
-                {
-                    var v = engine.GetInstance(world.VillageIndex, cx, cz);
-                    if (v != null)
+                    if (world.Sampler.GroundTop(rng.Next(-n / 2 * span, n / 2 * span), rng.Next(-n / 2 * span, n / 2 * span))
+                        > world.Sampler.OceanLevel)
                     {
-                        villages++;
-                        string style = v.Variant.Name.Split('_')[1];
-                        styles[style] = styles.GetValueOrDefault(style) + 1;
+                        land++;
+                    }
+                }
+                landKm2 += n * n * (span / 1000.0) * (span / 1000.0) * land / samples;
+                for (int cx = -n / 2; cx < n / 2; cx++)
+                {
+                    for (int cz = -n / 2; cz < n / 2; cz++)
+                    {
+                        var v = engine.GetInstance(world.VillageIndex, cx, cz);
+                        if (v != null)
+                        {
+                            villages++;
+                            if (density == 1f)
+                            {
+                                string style = v.Variant.Name.Split('_')[1];
+                                styles[style] = styles.GetValueOrDefault(style) + 1;
+                            }
+                        }
                     }
                 }
             }
+            perVillage[density] = landKm2 / Math.Max(1, villages);
         }
-        double perVillage = landKm2 / Math.Max(1, villages);
-        string detail = $"{villages} villages on {landKm2:0} km² of land, one per {perVillage:0.0} km² ("
+        string detail = $"default: one per {perVillage[1f]:0.00} km² of land, maximum: one per {perVillage[4f]:0.00} km² ("
             + string.Join(", ", styles.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key} {kv.Value}")) + ")";
         TestContext.Current.TestOutputHelper?.WriteLine(detail);
-        Assert.True(perVillage >= 5 && perVillage <= 9, detail);
-        Assert.True(styles.Count >= 3, detail);
+        Assert.True(perVillage[1f] >= 0.6 && perVillage[1f] <= 2.0, detail);
+        Assert.True(perVillage[4f] <= 0.7 && perVillage[4f] * 1.8 <= perVillage[1f], detail);
+        Assert.True(styles.Count == 5, detail);
     }
 }
 

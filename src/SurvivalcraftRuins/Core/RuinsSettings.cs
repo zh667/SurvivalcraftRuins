@@ -3,6 +3,23 @@ using System.Xml.Linq;
 namespace SurvivalcraftRuins.Core;
 
 /// <summary>
+/// The density steps as the plugin runtime's Mod Settings page shows them
+/// (an enum slider; names come from Assets/Lang). Order matches
+/// <see cref="RuinsSettings.DensityTiers"/>.
+/// </summary>
+public enum RuinsDensity
+{
+    Off,
+    VeryRare,
+    Rare,
+    Default,
+    Common,
+    VeryCommon,
+    Abundant,
+    Maximum,
+}
+
+/// <summary>
 /// Player-facing knobs, persisted by the game through ModLoader's settings
 /// hooks and edited on <c>RuinsSettingsScreen</c>. Both may be changed at any
 /// time, including halfway through a world: density decides only which
@@ -44,6 +61,11 @@ public static class RuinsSettings
             }
         }
         return best;
+    }
+
+    public static float DensityOf(RuinsDensity step)
+    {
+        return DensityTiers[Math.Clamp((int)step, 0, DensityTiers.Length - 1)];
     }
 
     /// <summary>Multiplier on guard counts. 0 disables guards entirely.</summary>

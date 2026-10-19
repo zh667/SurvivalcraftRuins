@@ -1,0 +1,29 @@
+{
+  "ModSettings": {
+    "SurvivalcraftRuins": {
+      "Ruins": {
+        "Name": "Ruins",
+        "Title": "Survivalcraft Ruins · Mod settings",
+        "Description": "How often ruins and villages appear, and how strong their guards are. Change any time; density only affects land you have not explored yet.",
+        "Density": {
+          "Name": "Structure density",
+          "Description": "Eight steps from off to maximum, villages included. Structures already in your world stay put."
+        },
+        "Guards": {
+          "Name": "Guard strength",
+          "Description": "Multiplies guard counts; 0 turns guards off. Takes effect at once, also at ruins you already found."
+        }
+      },
+      "RuinsDensity": {
+        "Off": "Off",
+        "VeryRare": "Very rare ×0.25",
+        "Rare": "Rare ×0.5",
+        "Default": "Default ×1",
+        "Common": "Common ×1.5",
+        "VeryCommon": "Very common ×2",
+        "Abundant": "Abundant ×3",
+        "Maximum": "Maximum ×4"
+      }
+    }
+  }
+}

@@ -18,14 +18,21 @@ public sealed record VillagePlan(int[] Floors, int[] ClearFrom, bool[] Keep, int
 /// Buildings that would stand in water or straddle a step of more than
 /// <see cref="MaxBuildingRelief"/> blocks are left out; a site that loses its
 /// town centre or too many houses is refused, and placement tries elsewhere.
+/// The style comes from the climate at the centre alone: a village may run
+/// over into the next climate, as in Minecraft.
 /// </summary>
 public static class VillageBuilder
 {
-    /// <summary>Largest ground height difference allowed under one building.</summary>
-    public const int MaxBuildingRelief = 6;
+    /// <summary>
+    /// Largest ground height difference allowed under one building. Minecraft
+    /// builds villages on hillsides too and reshapes the ground around each
+    /// house; here the box is cut into the slope and the low side stands on
+    /// foundation, which reads fine up to about this much.
+    /// </summary>
+    public const int MaxBuildingRelief = 16;
 
     /// <summary>Share of a layout's houses that must survive the terrain.</summary>
-    public const float MinHouseShare = 0.6f;
+    public const float MinHouseShare = 0.4f;
 
     /// <summary>Foundation never reaches deeper than this below a floor.</summary>
     public const int MaxFoundationDepth = 24;
@@ -36,10 +43,9 @@ public static class VillageBuilder
     /// Builds the layout centred on (centerX, centerZ), or returns null when
     /// the terrain there will not take it.
     /// </summary>
-    public static SitedStructure? Build(VillageStyle style, int layoutIndex, int centerX, int centerZ, IWorldSampler sampler,
-        bool checkClimate = true)
+    public static SitedStructure? Build(VillageStyle style, int layoutIndex, int centerX, int centerZ, IWorldSampler sampler)
     {
-        var plan = Plan(style, layoutIndex, centerX, centerZ, sampler, checkClimate);
+        var plan = Plan(style, layoutIndex, centerX, centerZ, sampler);
         return plan == null ? null : Realize(style, layoutIndex, centerX, centerZ, sampler, plan);
     }
 
@@ -47,13 +53,8 @@ public static class VillageBuilder
     /// Decides each piece's floor and which buildings the terrain accepts,
     /// without producing any cells; null when the site is refused.
     /// </summary>
-    public static VillagePlan? Plan(VillageStyle style, int layoutIndex, int centerX, int centerZ, IWorldSampler sampler,
-        bool checkClimate = true)
+    public static VillagePlan? Plan(VillageStyle style, int layoutIndex, int centerX, int centerZ, IWorldSampler sampler)
     {
-        if (checkClimate && !ClimateHolds(style, centerX, centerZ, sampler))
-        {
-            return null;
-        }
         var layout = style.Layouts[layoutIndex];
         var ground = new GroundCache(sampler);
         int ocean = sampler.OceanLevel;
@@ -99,6 +100,12 @@ public static class VillageBuilder
             {
                 fits = SiteFits(ground, ocean, centerX + lp.X, centerZ + lp.Z, piece,
                     checkRelief: piece.Kind != VillagePieceKind.Decor);
+            }
+            if (fits && piece.Kind == VillagePieceKind.Decor && lp.Anchor.OnGround)
+            {
+                // Lamps and decorations are optional: one that would need a
+                // pillar of earth under it (hung over a drop) is left out.
+                fits = FoundationDepth(ground, centerX + lp.X, centerZ + lp.Z, piece, floor) <= MaxDecorFoundation;
             }
             if (!fits)
             {
@@ -167,6 +174,10 @@ public static class VillageBuilder
                 {
                     for (int z = 0; z < piece.SizeZ; z++)
                     {
+                        // A piece hung off another one (a decoration on the
+                        // square) gets foundation too: where the square has a
+                        // gap under it, Minecraft's terrain shaping would have
+                        // raised ground there.
                         bool floored = piece.FloorColumns[x + z * piece.SizeX];
                         if (!clears && !floored)
                         {
@@ -213,47 +224,112 @@ public static class VillageBuilder
             }
         }
 
+        prep.AddRange(Embankments(style, layout, plan, ground, centerX, centerZ, originY, cells));
         var data = Assemble(StructureName(style, layoutIndex), style.Palette, cells, chests, prep);
         return new SitedStructure(data, originY);
+    }
+
+    /// <summary>Most foundation a decoration may need before it is left out.</summary>
+    public const int MaxDecorFoundation = 2;
+
+    private static int FoundationDepth(GroundCache ground, int minX, int minZ, VillagePiece piece, int floor)
+    {
+        int depth = 0;
+        for (int x = 0; x < piece.SizeX; x++)
+        {
+            for (int z = 0; z < piece.SizeZ; z++)
+            {
+                if (piece.FloorColumns[x + z * piece.SizeX])
+                {
+                    depth = Math.Max(depth, floor - 1 - ground.Top(minX + x, minZ + z));
+                }
+            }
+        }
+        return depth;
+    }
+
+    /// <summary>Widest embankment around a building on a slope.</summary>
+    public const int MaxEmbankment = 6;
+
+    /// <summary>
+    /// Earth banked up against buildings that stand on foundation, one block
+    /// lower per block out, capped with grass. Minecraft reshapes the terrain
+    /// around every village piece the same way ("beardifier"); without it a
+    /// house on a slope stands on a bare column of dirt. Columns the village
+    /// uses for anything else (streets, other buildings) are left alone.
+    /// </summary>
+    private static IEnumerable<SitePrep> Embankments(VillageStyle style, VillageLayout layout, VillagePlan plan,
+        GroundCache ground, int centerX, int centerZ, int originY, List<Cell> cells)
+    {
+        var occupied = new HashSet<(int, int)>();
+        foreach (var c in cells)
+        {
+            occupied.Add((c.X, c.Z));
+        }
+        var top = new Dictionary<(int, int), int>();
+        for (int i = 0; i < layout.Pieces.Length; i++)
+        {
+            var lp = layout.Pieces[i];
+            var piece = style.Pieces[lp.Ref];
+            if (!plan.Keep[i] || !piece.Rigid || !lp.Anchor.OnGround || piece.Kind == VillagePieceKind.Well)
+            {
+                continue;
+            }
+            int floor = plan.Floors[i];
+            int depth = FoundationDepth(ground, centerX + lp.X, centerZ + lp.Z, piece, floor);
+            if (depth <= 1)
+            {
+                continue;
+            }
+            int reach = Math.Min(MaxEmbankment, depth);
+            for (int x = -reach; x < piece.SizeX + reach; x++)
+            {
+                for (int z = -reach; z < piece.SizeZ + reach; z++)
+                {
+                    int dx = x < 0 ? -x : x >= piece.SizeX ? x - piece.SizeX + 1 : 0;
+                    int dz = z < 0 ? -z : z >= piece.SizeZ ? z - piece.SizeZ + 1 : 0;
+                    int d = Math.Max(dx, dz);
+                    if (d == 0)
+                    {
+                        continue;
+                    }
+                    var key = (lp.X + x, lp.Z + z);
+                    if (occupied.Contains(key))
+                    {
+                        continue;
+                    }
+                    int target = floor - 1 - d;
+                    if (target <= ground.Top(centerX + key.Item1, centerZ + key.Item2))
+                    {
+                        continue;
+                    }
+                    if (!top.TryGetValue(key, out int existing) || target > existing)
+                    {
+                        top[key] = target;
+                    }
+                }
+            }
+        }
+        foreach (var ((x, z), y) in top)
+        {
+            yield return new SitePrep
+            {
+                X = (short)x,
+                Z = (short)z,
+                FoundationTop = (short)(y - originY),
+                ClearBottom = 1,
+                ClearTop = 0,
+                FoundationPalette = (ushort)style.FoundationPalette,
+                Capped = true,
+                CapPalette = (ushort)style.EmbankmentCapPalette,
+            };
+        }
     }
 
     /// <summary>The same layout on endless flat grass at height 64: for tests and tools.</summary>
     public static StructureData BuildFlat(VillageStyle style, int layoutIndex)
     {
-        return Build(style, layoutIndex, 0, 0, FlatGround.Instance, checkClimate: false)!.Data;
-    }
-
-    /// <summary>How far from the centre the climate is checked.</summary>
-    public const int ClimateReach = 56;
-
-    /// <summary>Of the centre and four probes at <see cref="ClimateReach"/>, how many must agree.</summary>
-    public const int ClimateVotes = 4;
-
-    /// <summary>
-    /// The village stands in its own climate: a desert village half on grass,
-    /// or a snowy one reaching into a jungle, reads as a mistake. Survivalcraft
-    /// steps its climate in narrow bands (noise times three, cut into 16
-    /// levels), so demanding all five probes would refuse a third of good
-    /// sites; one edge may run over a border, the middle may not.
-    /// </summary>
-    public static bool ClimateHolds(VillageStyle style, int centerX, int centerZ, IWorldSampler sampler)
-    {
-        int r = ClimateReach;
-        ReadOnlySpan<(int, int)> probes = stackalloc (int, int)[] { (0, 0), (r, 0), (-r, 0), (0, r), (0, -r) };
-        int votes = 0;
-        foreach (var (dx, dz) in probes)
-        {
-            int x = centerX + dx, z = centerZ + dz;
-            if (VillageClimate.StyleFor(sampler.Temperature(x, z), sampler.Humidity(x, z)) == style.Name)
-            {
-                votes++;
-            }
-            else if (dx == 0 && dz == 0)
-            {
-                return false;
-            }
-        }
-        return votes >= ClimateVotes;
+        return Build(style, layoutIndex, 0, 0, FlatGround.Instance)!.Data;
     }
 
     private static bool SiteFits(GroundCache ground, int ocean, int minX, int minZ, VillagePiece piece, bool checkRelief)

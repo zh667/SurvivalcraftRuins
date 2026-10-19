@@ -108,7 +108,103 @@ class Palette:
         return self.index[key]
 
 
-def convert_piece(element, rotation, palette, report):
+EMPTY = {"minecraft:air", "minecraft:cave_air", "minecraft:structure_void"}
+# Blocks a chest must not stand on or back onto: not floors, not walls.
+PLANTS = {"minecraft:grass", "minecraft:tall_grass", "minecraft:fern", "minecraft:large_fern", "minecraft:snow"}
+NOT_STRUCTURAL = ("glass_pane", "fence", "door", "trapdoor", "torch", "carpet", "_bed", "flower",
+                  "sapling", "ladder", "sign", "banner", "button", "pressure_plate", "lantern",
+                  "potted", "campfire", "wheat", "stem", "bell", "water", "lava", "farmland",
+                  "chest", "barrel", "slab", "stairs", "wall", "iron_bars", "leaves")
+
+
+def final_blocks(template):
+    """(pos -> (name, props, nbt)) with jigsaws replaced by their final state."""
+    out = {}
+    for pos, name, props, nbt in template.blocks:
+        if name == "minecraft:jigsaw":
+            name, props = parse_state(nbt.get("final_state", "minecraft:air"))
+        out[pos] = (name, props, nbt)
+    return out
+
+
+def house_chest(template, location):
+    """
+    A spot for a loot chest inside a house that has none: an empty cell with a
+    floor under it, head room and a roof over it, walled in on all four sides,
+    backed onto a wall and clear of doors and the entrance. Ground floor
+    corners win. Returns (pos, facing) in template coordinates, or None for
+    pieces that are not enclosed buildings (farms, pens, squares).
+    """
+    blocks = final_blocks(template)
+    sx, sy, sz = template.size
+
+    def name_at(p):
+        b = blocks.get(p)
+        return "minecraft:air" if b is None or b[0] in EMPTY else b[0]
+
+    def empty(p):
+        return name_at(p) == "minecraft:air"
+
+    def structural(p):
+        n = name_at(p)
+        return n != "minecraft:air" and n not in PLANTS and not any(k in n for k in NOT_STRUCTURAL)
+
+    if any(b[0] in ("minecraft:chest", "minecraft:barrel", "minecraft:trapped_chest") for b in blocks.values()):
+        return None
+    entrances = [pos for pos, name, props, nbt in template.blocks
+                 if name == "minecraft:jigsaw" and nbt.get("name") == "minecraft:building_entrance"]
+    for strict in (True, False):
+        spot = _chest_spot(template, blocks, name_at, empty, structural, entrances, strict)
+        if spot is not None:
+            return spot
+    return None
+
+
+def _chest_spot(template, blocks, name_at, empty, structural, entrances, strict):
+    sx, sy, sz = template.size
+    best = None
+    for x in range(sx):
+        for z in range(sz):
+            for y in range(1, sy - 2):
+                p = (x, y, z)
+                if not (empty(p) and empty((x, y + 1, z)) and structural((x, y - 1, z))):
+                    continue
+                if not any(name_at((x, yy, z)) != "minecraft:air" for yy in range(y + 2, sy)):
+                    continue                                    # no roof
+                enclosed = True
+                for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    cx, cz = x + dx, z + dz
+                    hit = False
+                    while 0 <= cx < sx and 0 <= cz < sz:
+                        if name_at((cx, y, cz)) != "minecraft:air":
+                            hit = True
+                            break
+                        cx += dx
+                        cz += dz
+                    enclosed = enclosed and hit
+                if strict and not enclosed:
+                    continue
+                walls = []
+                near_door = False
+                for direction, (dx, dz) in (("north", (0, -1)), ("south", (0, 1)), ("west", (-1, 0)), ("east", (1, 0))):
+                    q = (x + dx, y, z + dz)
+                    if structural(q):
+                        walls.append(direction)
+                    n = name_at(q)
+                    if "door" in n or q in entrances or (x + dx, y - 1, z + dz) in entrances:
+                        near_door = True
+                if not walls or near_door or any(abs(x - e[0]) + abs(z - e[2]) <= 2 for e in entrances):
+                    continue
+                facing = jg.OPPOSITE[walls[0]]                 # front faces the room
+                # Low first, then corners, then far from the door.
+                door_distance = min((abs(x - e[0]) + abs(z - e[2]) for e in entrances), default=0)
+                score = (y, -len(walls), -door_distance, x, z)
+                if best is None or score < best[0]:
+                    best = (score, p, facing)
+    return None if best is None else (best[1], best[2])
+
+
+def convert_piece(element, rotation, palette, report, add_chest=False):
     """Rotated, mapped cells of one piece, relative to its rotated box min."""
     template = element.template
     box = template.bbox(rotation, (0, 0, 0))
@@ -116,7 +212,15 @@ def convert_piece(element, rotation, palette, report):
     path_to_grass = PATH_TO_GRASS.get(element.processors, 0.0)
     cells = {}
     chests = []
-    for pos, name, props, nbt in template.blocks:
+    source = list(template.blocks)
+    extra_pool = None
+    if add_chest:
+        spot = house_chest(template, element.location)
+        if spot is not None:
+            pos, facing = spot
+            extra_pool = vb.house_pool(element.location)
+            source.append((pos, "minecraft:chest", {"facing": facing}, {"RuinsPool": extra_pool}))
+    for pos, name, props, nbt in source:
         if name == "minecraft:jigsaw":
             name, props = parse_state(nbt.get("final_state", "minecraft:air"))
         if name in ("minecraft:air", "minecraft:cave_air", "minecraft:structure_void"):
@@ -132,7 +236,7 @@ def convert_piece(element, rotation, palette, report):
         cells[key] = palette.get(block, data)
         if block == "ChestBlock":
             table = (nbt.get("LootTable") or "").removeprefix("minecraft:chests/village/")
-            chests.append([*key, vb.loot_pool(table)])
+            chests.append([*key, nbt.get("RuinsPool") or vb.loot_pool(table)])
     sx, sy, sz = box.x1 - box.x0 + 1, box.y1 - box.y0 + 1, box.z1 - box.z0 + 1
     ordered = sorted(cells.items(), key=lambda kv: (kv[0][1], kv[0][2], kv[0][0]))
     return {
@@ -177,7 +281,8 @@ def build_style(style, assembler, source, count, preview_dir):
                 continue            # features (trees, flowers, hay piles) are left to the land
             key = f"{element.location}@{piece.rotation}"
             if key not in piece_refs:
-                converted = convert_piece(element, piece.rotation, palette, report)
+                converted = convert_piece(element, piece.rotation, palette, report,
+                                          add_chest=piece_kind(element.location) == "house")
                 converted.update({"name": key, "kind": piece_kind(element.location), "rigid": element.rigid})
                 piece_refs[key] = len(pieces_out)
                 pieces_out.append(converted)

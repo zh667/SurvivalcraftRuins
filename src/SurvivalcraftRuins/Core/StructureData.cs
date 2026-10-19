@@ -35,6 +35,10 @@ public readonly struct SitePrep
 
     public ushort FoundationPalette { get; init; }
 
+    /// <summary>When set, the topmost foundation cell uses <see cref="CapPalette"/> (grass on an embankment).</summary>
+    public bool Capped { get; init; }
+    public ushort CapPalette { get; init; }
+
     /// <summary>Clear only plants and snow cover, never terrain (used above streets).</summary>
     public bool CoverOnly { get; init; }
 }
