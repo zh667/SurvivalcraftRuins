@@ -144,6 +144,27 @@ dotnet test tests/SurvivalcraftRuins.Tests     # 纯逻辑测试,不依赖游戏
 tools/package.sh                               # 产出 artifacts/*.scmod
 ```
 
+### 游戏内隔离测试
+
+`tests/RuntimeSmoke` 是只用于测试的模组(不引用本模组,所以旧版包也能当对照组跑),
+`tools/run_isolated.py` 在 Windows 上把游戏本体复制一份到隔离目录、静音、隐藏窗口,
+装上被测包和测试模组后自动运行:建新世界 → 找到两只已填好的遗迹宝箱(只挑没被改动过的
+区块,保证之后会按种子重新生成)→ 一只原样、一只拿空 → 飞走直到区块卸载再回来,两次 →
+存档重进 → 每一步核对箱子内容。联机版额外有 `--mode server`,按房主一侧运行
+(联机版单人开档本来就是开服务器;这里不打开网络端口)。
+
+```bash
+# VPS:测试模组按运行时各编一次
+dotnet build tests/RuntimeSmoke -c Release -p:SurvivalcraftDir=$HOME/sc-libs/ -o <out>/net
+dotnet build tests/RuntimeSmoke -c Release -p:SurvivalcraftDir=<SCAPI dlls>/ -p:RuinsFlavor=scapi -o <out>/scapi
+# Windows(E:/projects/SurvivalcraftRuins-test,packages/ 放包,smoke/{net,scapi}/ 放测试模组)
+python run_isolated.py --runtime net --mode server --package "packages/[NET]SurvivalcraftRuins2.1.0.netmod"
+python run_isolated.py --runtime scapi-1.9.5.1 --package "packages/[API1.9]SurvivalcraftRuins2.1.0.scmod"
+```
+
+2.0.0 当对照组时,第一次往返后没动过的箱子物品翻倍、拿空的箱子被重新装满,测试失败;
+2.1.0 起通过。
+
 模板转换器(MC 结构 .nbt → SC 模板 JSON):
 
 ```bash

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- In-game test for tools/run_isolated.py; never shipped. It does not reference
+       the mod, so it also runs against an old package as a control. Built once per
+       runtime like the mod: -p:SurvivalcraftDir=<game dlls> [-p:RuinsFlavor=scapi]. -->
+  <PropertyGroup>
+    <AssemblyName>RuinsRuntimeSmoke</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RuinsFlavor)' == 'scapi'">
+    <DefineConstants>$(DefineConstants);RUINS_SCAPI</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Survivalcraft"><HintPath>$(SurvivalcraftDir)Survivalcraft.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Engine"><HintPath>$(SurvivalcraftDir)Engine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="EntitySystem"><HintPath>$(SurvivalcraftDir)EntitySystem.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(RuinsFlavor)' == 'scapi'">
+    <Reference Include="0Harmony"><HintPath>$(SurvivalcraftDir)0Harmony.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
