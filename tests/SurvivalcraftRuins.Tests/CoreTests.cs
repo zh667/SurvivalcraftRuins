@@ -445,9 +445,8 @@ public class LootAndTemplateTests
             var data = StructureTemplate.Parse(File.ReadAllText(file));
             templates[data.Name] = data;
         }
-        var defs = StructureRegistry.CreateDefs(templates, TestRegistry.Villages());
-        Assert.Equal(15, defs.Count);
-        int villageVariants = TestRegistry.Villages().Values.Sum(v => v.Layouts.Length);
+        var defs = StructureRegistry.CreateDefs(templates);
+        Assert.Equal(14, defs.Count);
         int variantCount = 0;
         foreach (var def in defs)
         {
@@ -467,13 +466,6 @@ public class LootAndTemplateTests
                 {
                     Assert.NotEmpty(GuardPlanner.Plan(variant, data));
                 }
-                foreach (var chest in data.Chests)
-                {
-                    if (chest.Pool != null)
-                    {
-                        Assert.True(pools.ContainsKey(chest.Pool), $"{variant.Name}: missing pool '{chest.Pool}'");
-                    }
-                }
                 if (variant.Bounds is { } bounds)
                 {
                     Assert.Equal(bounds, StructureBounds.From(data));
@@ -482,7 +474,7 @@ public class LootAndTemplateTests
                 Assert.True(data.SizeZ <= def.Footprint, $"{variant.Name} too deep: {data.SizeZ}");
             }
         }
-        Assert.Equal(23 + villageVariants, variantCount);
+        Assert.Equal(23, variantCount);
     }
 }
 
@@ -1213,9 +1205,6 @@ internal static class TestRegistry
         return s_defs ??= StructureRegistry.CreateDefs(Templates());
     }
 
-    private static IReadOnlyDictionary<string, SurvivalcraftRuins.Core.Village.VillageStyle>? s_villages;
-    private static IReadOnlyList<StructureDef>? s_fullDefs;
-
     public static string AssetsDir()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -1225,27 +1214,5 @@ internal static class TestRegistry
         }
         Assert.NotNull(dir);
         return Path.Combine(dir!.FullName, "src", "SurvivalcraftRuins", "Assets");
-    }
-
-    /// <summary>The shipped village styles, as the mod loads them.</summary>
-    public static IReadOnlyDictionary<string, SurvivalcraftRuins.Core.Village.VillageStyle> Villages()
-    {
-        if (s_villages != null)
-        {
-            return s_villages;
-        }
-        var villages = new Dictionary<string, SurvivalcraftRuins.Core.Village.VillageStyle>(StringComparer.Ordinal);
-        foreach (string file in Directory.GetFiles(Path.Combine(AssetsDir(), "Villages"), "*.json"))
-        {
-            var style = SurvivalcraftRuins.Core.Village.VillageStyle.Parse(File.ReadAllText(file));
-            villages[style.Name] = style;
-        }
-        return s_villages = villages;
-    }
-
-    /// <summary>The registry exactly as the game builds it, villages included.</summary>
-    public static IReadOnlyList<StructureDef> FullDefs()
-    {
-        return s_fullDefs ??= StructureRegistry.CreateDefs(Templates(), Villages());
     }
 }

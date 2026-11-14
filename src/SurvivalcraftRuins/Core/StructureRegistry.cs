@@ -1,5 +1,4 @@
 using SurvivalcraftRuins.Builders;
-using SurvivalcraftRuins.Core.Village;
 
 namespace SurvivalcraftRuins.Core;
 
@@ -17,7 +16,7 @@ public static class StructureRegistry
     /// existed, or with any older version of it, still gets today's structures
     /// in the land it has yet to explore.
     /// </summary>
-    public const int CurrentLayoutVersion = 6;
+    public const int CurrentLayoutVersion = 7;
 
     private static readonly WeatherProfile s_stoneRuin = new()
     {
@@ -36,8 +35,7 @@ public static class StructureRegistry
     private static readonly string[] s_deepGuards = { "Shark_Tiger", "Shark_GreatWhite", "Barracuda" };
 
     public static IReadOnlyList<StructureDef> CreateDefs(
-        IReadOnlyDictionary<string, StructureData> templates,
-        IReadOnlyDictionary<string, VillageStyle>? villages = null)
+        IReadOnlyDictionary<string, StructureData> templates)
     {
         Func<int, StructureData> Template(string name)
         {
@@ -560,64 +558,6 @@ public static class StructureRegistry
             },
         };
 
-        var list = defs.ToList();
-        var village = CreateVillageDef(villages);
-        if (village != null)
-        {
-            // First: everything else makes room for a village. Behind the sky
-            // fortresses a good share of them was refused for one hanging
-            // over part of the site.
-            list.Insert(0, village);
-        }
-        return list;
-    }
-
-    /// <summary>
-    /// Minecraft villages: one slot whose variants are every layout of every
-    /// style, the style picked by the climate at the site. Rarer than the
-    /// grand landmarks per cell, but they are big: a village spans 70-150
-    /// blocks, so small finds are kept a good walk away from its centre.
-    /// </summary>
-    public static StructureDef? CreateVillageDef(IReadOnlyDictionary<string, VillageStyle>? villages)
-    {
-        if (villages == null || villages.Count == 0)
-        {
-            return null;
-        }
-        var variants = new List<StructureVariant>();
-        var byStyle = new Dictionary<string, List<StructureVariant>>(StringComparer.Ordinal);
-        foreach (var style in villages.Values.OrderBy(v => v.Name, StringComparer.Ordinal))
-        {
-            var mine = new List<StructureVariant>();
-            for (int i = 0; i < style.Layouts.Length; i++)
-            {
-                int layout = i;
-                var variant = new StructureVariant
-                {
-                    Name = VillageBuilder.StructureName(style, layout),
-                    Provider = _ => VillageBuilder.BuildFlat(style, layout),
-                    SitedProvider = request => VillageBuilder.Build(
-                        style, layout, request.CenterX, request.CenterZ, request.Sampler),
-                    ChestPools = Array.Empty<string>(),
-                };
-                mine.Add(variant);
-                variants.Add(variant);
-            }
-            byStyle[style.Name] = mine;
-        }
-        return new StructureDef
-        {
-            Name = "village",
-            GridChunks = 40,
-            Chance = 0.45f,
-            Anchor = AnchorKind.Settlement,
-            Footprint = 176,
-            SeparationRadius = 160,
-            Variants = variants,
-            PickVariant = (temperature, humidity, hash) =>
-                byStyle.TryGetValue(VillageClimate.StyleFor(temperature, humidity), out var options) && options.Count > 0
-                    ? options[(int)(hash % (uint)options.Count)]
-                    : null,
-        };
+        return defs;
     }
 }

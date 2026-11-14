@@ -4,10 +4,10 @@
       "Ruins": {
         "Name": "Ruins",
         "Title": "Survivalcraft Ruins · Mod settings",
-        "Description": "How often ruins and villages appear, and how strong their guards are. Change any time; density only affects land you have not explored yet.",
+        "Description": "How often ruins appear, and how strong their guards are. Change any time; density only affects land you have not explored yet.",
         "Density": {
           "Name": "Structure density",
-          "Description": "Eight steps from off to maximum, villages included. Structures already in your world stay put."
+          "Description": "Eight steps from off to maximum. Structures already in your world stay put."
         },
         "Guards": {
           "Name": "Guard strength",

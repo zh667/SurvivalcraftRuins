@@ -75,20 +75,10 @@ public sealed class RuinsSaveData
 public sealed class GeneratorSampler : IWorldSampler
 {
     private readonly ITerrainContentsGenerator m_generator;
-    private readonly TerrainSurface24? m_surface;
 
     public GeneratorSampler(ITerrainContentsGenerator generator)
     {
         m_generator = generator;
-        if (generator is TerrainContentsGenerator24 generator24)
-        {
-            m_surface = new TerrainSurface24(generator24);
-        }
-    }
-
-    public int GroundTop(int x, int z)
-    {
-        return m_surface?.GroundTop(x, z) ?? (int)MathF.Floor(m_generator.CalculateHeight(x, z));
     }
 
     public int OceanLevel => m_generator.OceanLevel;
@@ -306,11 +296,6 @@ public sealed class WorldState
             // instead would leave this chunk's slice missing for good.
             Ledger.Approve(key, instance);
             Dirty = true;
-            if (instance.Def.Anchor == AnchorKind.Settlement)
-            {
-                Log.Information($"[Ruins] Village {instance.Variant.Name} at "
-                    + $"{instance.CenterX},{instance.OriginY},{instance.CenterZ}.");
-            }
             WriteInstancePart(chunk, instance, baseX, baseZ);
         }
     }
@@ -359,34 +344,6 @@ public sealed class WorldState
                     {
                         continue;
                     }
-                    if (variant.SitedProvider != null)
-                    {
-                        // Laid out against the terrain again, which is
-                        // deterministic, so it comes back where it was.
-                        var sited = variant.SitedProvider(
-                            new SiteRequest(record.Seed, record.OriginX, record.OriginZ, Sampler));
-                        if (sited == null)
-                        {
-                            Log.Warning($"[Ruins] Ledger entry '{record.Key}' no longer fits its site.");
-                            break;
-                        }
-                        if (sited.OriginY != record.OriginY)
-                        {
-                            Log.Warning($"[Ruins] Ledger entry '{record.Key}' rebuilt at height {sited.OriginY}, "
-                                + $"recorded {record.OriginY}; the terrain generator must have changed.");
-                        }
-                        instance = new StructureInstance
-                        {
-                            Def = def,
-                            Variant = variant,
-                            Data = sited.Data,
-                            OriginX = record.OriginX,
-                            OriginY = sited.OriginY,
-                            OriginZ = record.OriginZ,
-                            InstanceSeed = record.Seed,
-                        };
-                        break;
-                    }
                     instance = new StructureInstance
                     {
                         Def = def,
@@ -425,10 +382,6 @@ public sealed class WorldState
         if (def.Anchor is AnchorKind.Land or AnchorKind.Coast)
         {
             WriteFoundation(chunk, instance, baseX, baseZ);
-        }
-        if (data.SitePrep.Count > 0)
-        {
-            PrepareSite(chunk, instance, baseX, baseZ);
         }
 
         var sortedChests = s_sortedChests.GetOrAdd(data, static d =>
@@ -484,10 +437,7 @@ public sealed class WorldState
             if (blockName == "ChestBlock")
             {
                 int chestIndex = Array.FindIndex(sortedChests, m => m.X == cell.X && m.Y == cell.Y && m.Z == cell.Z);
-                string pool = chestIndex >= 0 && sortedChests[chestIndex].Pool is { Length: > 0 } own
-                    ? own
-                    : ResolveChestPool(variant, chestIndex);
-                EnqueueContainer(instance, wx, wy, wz, pool, "Chest");
+                EnqueueContainer(instance, wx, wy, wz, ResolveChestPool(variant, chestIndex), "Chest");
             }
             else if (blockName == "DispenserBlock" && variant.DispenserPool != null)
             {
@@ -552,62 +502,6 @@ public sealed class WorldState
             return variant.ChestPools[variant.ChestPools.Count - 1];
         }
         return variant.ChestPools[chestIndex];
-    }
-
-    /// <summary>
-    /// The structure's per-column ground work inside this chunk: clear the
-    /// box a building stands in (or only the plants, above a street), then
-    /// fill foundation from the ground up to its floor.
-    /// </summary>
-    private static void PrepareSite(TerrainChunk chunk, StructureInstance instance, int baseX, int baseZ)
-    {
-        var data = instance.Data;
-        int oy = instance.OriginY;
-        foreach (var prep in data.SitePrep)
-        {
-            int wx = instance.OriginX + prep.X;
-            int wz = instance.OriginZ + prep.Z;
-            if (wx < baseX || wx > baseX + 15 || wz < baseZ || wz > baseZ + 15)
-            {
-                continue;
-            }
-            int lx = wx - baseX;
-            int lz = wz - baseZ;
-            if (prep.ClearTop >= prep.ClearBottom)
-            {
-                int y0 = Math.Max(1, oy + prep.ClearBottom);
-                int y1 = Math.Min(254, oy + prep.ClearTop);
-                for (int y = y0; y <= y1; y++)
-                {
-                    int contents = Game.Terrain.ExtractContents(chunk.GetCellValueFast(lx, y, lz));
-                    if (contents != 0 && (!prep.CoverOnly || GroundCover.IsCover(contents)))
-                    {
-                        chunk.SetCellValueFast(lx, y, lz, 0);
-                    }
-                }
-            }
-            if (prep.FoundationTop != SitePrep.None)
-            {
-                var entry = data.Palette[prep.FoundationPalette];
-                int value = BlockResolver.MakeValue(entry.BlockName, entry.Data);
-                int cap = value;
-                if (prep.Capped)
-                {
-                    var capEntry = data.Palette[prep.CapPalette];
-                    cap = BlockResolver.MakeValue(capEntry.BlockName, capEntry.Data);
-                }
-                int top = Math.Min(254, oy + prep.FoundationTop);
-                int bottom = Math.Max(1, top - Village.VillageBuilder.MaxFoundationDepth);
-                for (int y = top; y >= bottom; y--)
-                {
-                    if (!GroundCover.IsPassThrough(Game.Terrain.ExtractContents(chunk.GetCellValueFast(lx, y, lz))))
-                    {
-                        break;
-                    }
-                    chunk.SetCellValueFast(lx, y, lz, y == top ? cap : value);
-                }
-            }
-        }
     }
 
     private void WriteFoundation(TerrainChunk chunk, StructureInstance instance, int baseX, int baseZ)

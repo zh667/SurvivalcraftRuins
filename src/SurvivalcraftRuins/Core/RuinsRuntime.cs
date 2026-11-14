@@ -20,7 +20,6 @@ public static class RuinsRuntime
 
     private static IReadOnlyDictionary<string, StructureData>? s_templates;
     private static IReadOnlyDictionary<string, LootPool>? s_lootPools;
-    private static IReadOnlyDictionary<string, Village.VillageStyle>? s_villages;
 
     /// <summary>Loads templates and loot pools from the mod package. Idempotent.</summary>
     public static void LoadAssets(ModEntity entity)
@@ -30,7 +29,6 @@ public static class RuinsRuntime
             return;
         }
         var templates = new Dictionary<string, StructureData>(StringComparer.OrdinalIgnoreCase);
-        var villages = new Dictionary<string, Village.VillageStyle>(StringComparer.Ordinal);
         Dictionary<string, LootPool>? pools = null;
         entity.GetFiles(".json", (name, stream) =>
         {
@@ -50,17 +48,10 @@ public static class RuinsRuntime
             {
                 pools = LootConfig.Parse(json);
             }
-            else if (normalized.Contains("Assets/Villages/", StringComparison.OrdinalIgnoreCase))
-            {
-                var style = Village.VillageStyle.Parse(json);
-                villages[style.Name] = style;
-            }
         });
         s_templates = templates;
-        s_villages = villages;
         s_lootPools = pools ?? new Dictionary<string, LootPool>();
-        Log.Information($"[Ruins] Loaded {templates.Count} structure templates, {s_lootPools.Count} loot pools, "
-            + $"{villages.Count} village styles ({villages.Values.Sum(v => v.Layouts.Length)} layouts).");
+        Log.Information($"[Ruins] Loaded {templates.Count} structure templates, {s_lootPools.Count} loot pools.");
     }
 
     public static void OnChunkGenerated(TerrainChunk chunk)
@@ -167,7 +158,7 @@ public static class RuinsRuntime
                         + "would fall partly on the old land are skipped rather than written in halves.");
                 }
 
-                var defs = StructureRegistry.CreateDefs(s_templates, s_villages);
+                var defs = StructureRegistry.CreateDefs(s_templates);
                 var sampler = new GeneratorSampler(terrain.TerrainContentsGenerator);
                 var state = new WorldState
                 {

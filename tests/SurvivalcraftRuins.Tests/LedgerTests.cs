@@ -357,7 +357,7 @@ public class DensityKnobTests
     [Fact]
     public void EverySlotStillFitsInsideItsGridCell()
     {
-        foreach (var def in TestRegistry.FullDefs())
+        foreach (var def in TestRegistry.Defs())
         {
             int span = def.GridChunks * 16;
             foreach (var variant in def.Variants)

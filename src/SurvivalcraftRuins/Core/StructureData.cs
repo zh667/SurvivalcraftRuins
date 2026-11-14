@@ -6,42 +6,8 @@ public readonly record struct Cell(short X, short Y, short Z, ushort PaletteInde
 /// <summary>Palette entry: SC block class name plus data bits (Terrain data, not full value).</summary>
 public readonly record struct PaletteEntry(string BlockName, int Data);
 
-/// <summary>
-/// A chest. <paramref name="Pool"/> names its loot pool when the structure
-/// itself knows (village chests carry their Minecraft loot table); null leaves
-/// the choice to the variant's ChestPools list.
-/// </summary>
-public readonly record struct ChestMarker(short X, short Y, short Z, string? Pool = null);
-
-/// <summary>
-/// Ground work for one column, done before any of the structure's cells are
-/// written: terrain cleared out of a building's box and foundation filled up
-/// to its floor. Settlements need it per building, because each house sits at
-/// its own height on uneven land.
-/// </summary>
-public readonly struct SitePrep
-{
-    public const short None = short.MinValue;
-
-    public short X { get; init; }
-    public short Z { get; init; }
-
-    /// <summary>Fill with <see cref="FoundationPalette"/> from the ground up to this height; <see cref="None"/> skips.</summary>
-    public short FoundationTop { get; init; }
-
-    /// <summary>Clear cells from here up to <see cref="ClearTop"/>; nothing when ClearTop is below it.</summary>
-    public short ClearBottom { get; init; }
-    public short ClearTop { get; init; }
-
-    public ushort FoundationPalette { get; init; }
-
-    /// <summary>When set, the topmost foundation cell uses <see cref="CapPalette"/> (grass on an embankment).</summary>
-    public bool Capped { get; init; }
-    public ushort CapPalette { get; init; }
-
-    /// <summary>Clear only plants and snow cover, never terrain (used above streets).</summary>
-    public bool CoverOnly { get; init; }
-}
+/// <summary>A chest; its loot pool comes from the variant's ChestPools list.</summary>
+public readonly record struct ChestMarker(short X, short Y, short Z);
 
 public readonly record struct AmbushMarker(short X, short Y, short Z);
 
@@ -67,9 +33,6 @@ public sealed class StructureData
     public required IReadOnlyList<ChestMarker> Chests { get; init; }
     public required IReadOnlyList<AmbushMarker> Ambushes { get; init; }
 
-    /// <summary>Per-column ground work, applied before the cells. Empty for most structures.</summary>
-    public IReadOnlyList<SitePrep> SitePrep { get; init; } = Array.Empty<SitePrep>();
-
     public int SizeX => MaxX - MinX + 1;
     public int SizeY => MaxY - MinY + 1;
     public int SizeZ => MaxZ - MinZ + 1;
@@ -79,8 +42,7 @@ public sealed class StructureData
         IReadOnlyList<PaletteEntry> palette,
         IReadOnlyList<Cell> cells,
         IReadOnlyList<ChestMarker> chests,
-        IReadOnlyList<AmbushMarker> ambushes,
-        IReadOnlyList<SitePrep>? sitePrep = null)
+        IReadOnlyList<AmbushMarker> ambushes)
     {
         if (cells.Count == 0)
         {
@@ -106,7 +68,6 @@ public sealed class StructureData
             Cells = cells,
             Chests = chests,
             Ambushes = ambushes,
-            SitePrep = sitePrep ?? Array.Empty<SitePrep>(),
         };
     }
 }
