@@ -25,6 +25,12 @@ public sealed class StructureInstance
     public required int OriginZ { get; init; }
     public required int InstanceSeed { get; init; }
 
+    /// <summary>Grid cell this candidate was rolled in; identifies it in the world ledger.</summary>
+    public int CellX { get; init; }
+    public int CellZ { get; init; }
+
+    public string LedgerKey => StructureLedger.MakeKey(Def.Name, CellX, CellZ);
+
     public int WorldMinX => OriginX + Data.MinX;
     public int WorldMaxX => OriginX + Data.MaxX;
     public int WorldMinZ => OriginZ + Data.MinZ;
@@ -64,10 +70,12 @@ public sealed class PlacementEngine
     /// </summary>
     public const int DefaultSiteAttempts = 8;
 
+
     private readonly int m_seed;
     private readonly IWorldSampler m_sampler;
     private readonly IReadOnlyList<StructureDef> m_defs;
     private readonly float m_densityScale;
+    private readonly float m_separationScale;
     private readonly int m_siteAttempts;
     private readonly ConcurrentDictionary<(int, int, int), StructureInstance?> m_cache = new();
 
@@ -81,9 +89,13 @@ public sealed class PlacementEngine
         m_seed = seed;
         m_sampler = sampler;
         m_defs = defs;
-        m_densityScale = Math.Clamp(densityScale, 0f, 4f);
+        m_densityScale = Math.Clamp(densityScale, RuinsSettings.MinScale, RuinsSettings.MaxScale);
+        m_separationScale = m_densityScale <= 1f ? 1f : 1f / MathF.Sqrt(m_densityScale);
         m_siteAttempts = Math.Clamp(siteAttempts, 1, 32);
     }
+
+    /// <summary>The slot table this engine was built with, in priority order.</summary>
+    public IReadOnlyList<StructureDef> Defs => m_defs;
 
     public List<StructureInstance> InstancesIntersecting(int minX, int minZ, int maxX, int maxZ)
     {
@@ -91,10 +103,11 @@ public sealed class PlacementEngine
         for (int defIndex = 0; defIndex < m_defs.Count; defIndex++)
         {
             int cellSpan = m_defs[defIndex].GridChunks * 16;
-            int cellMinX = FloorDiv(minX - MaxFootprint, cellSpan);
-            int cellMaxX = FloorDiv(maxX + MaxFootprint, cellSpan);
-            int cellMinZ = FloorDiv(minZ - MaxFootprint, cellSpan);
-            int cellMaxZ = FloorDiv(maxZ + MaxFootprint, cellSpan);
+            int footprint = m_defs[defIndex].Footprint;
+            int cellMinX = FloorDiv(minX - footprint, cellSpan);
+            int cellMaxX = FloorDiv(maxX + footprint, cellSpan);
+            int cellMinZ = FloorDiv(minZ - footprint, cellSpan);
+            int cellMaxZ = FloorDiv(maxZ + footprint, cellSpan);
             for (int cx = cellMinX; cx <= cellMaxX; cx++)
             {
                 for (int cz = cellMinZ; cz <= cellMaxZ; cz++)
@@ -110,6 +123,23 @@ public sealed class PlacementEngine
         return result;
     }
 
+    /// <summary>
+    /// The density setting as this slot feels it. Raising the setting only ever
+    /// turns cells that rolled empty into cells that hold something: the per
+    /// cell hash does not move, so every structure already standing in a world
+    /// keeps its exact place and shape.
+    /// </summary>
+    public float DensityFactor(StructureDef def)
+    {
+        if (m_densityScale <= 0f)
+        {
+            return 0f;
+        }
+        return def.DensityExponent == 1f
+            ? m_densityScale
+            : MathF.Pow(m_densityScale, def.DensityExponent);
+    }
+
     public StructureInstance? GetInstance(int defIndex, int cellX, int cellZ)
     {
         return m_cache.GetOrAdd((defIndex, cellX, cellZ), key => ComputeInstance(key.Item1, key.Item2, key.Item3));
@@ -119,7 +149,7 @@ public sealed class PlacementEngine
     {
         var def = m_defs[defIndex];
         uint hash = DeterministicHash.Mix(m_seed, def.Salt, cellX, cellZ);
-        if (DeterministicHash.ToUnitFloat(hash) >= def.Chance * m_densityScale)
+        if (DeterministicHash.ToUnitFloat(hash) >= def.Chance * DensityFactor(def))
         {
             return null;
         }
@@ -210,15 +240,25 @@ public sealed class PlacementEngine
             OriginY = oy,
             OriginZ = oz,
             InstanceSeed = instanceSeed,
+            CellX = cellX,
+            CellZ = cellZ,
         };
 
-        // Higher-priority defs (lower index) win on overlap and on the keep-out
-        // radius; suppression is deterministic because it only ever consults
-        // strictly lower indices, so the dependency graph stays acyclic.
+        return CrowdedOut(defIndex, instance) ? null : instance;
+    }
+
+    /// <summary>
+    /// Higher-priority defs (lower index) win on overlap and on the keep-out
+    /// radius; suppression is deterministic because it only ever consults
+    /// strictly lower indices, so the dependency graph stays acyclic.
+    /// </summary>
+    private bool CrowdedOut(int defIndex, StructureInstance instance)
+    {
+        var def = m_defs[defIndex];
         for (int higher = 0; higher < defIndex; higher++)
         {
             int span = m_defs[higher].GridChunks * 16;
-            int reach = MaxFootprint + Math.Max(def.SeparationRadius, m_defs[higher].SeparationRadius);
+            int reach = m_defs[higher].Footprint + Math.Max(def.SeparationRadius, m_defs[higher].SeparationRadius);
             int hMinX = FloorDiv(instance.WorldMinX - reach, span);
             int hMaxX = FloorDiv(instance.WorldMaxX + reach, span);
             int hMinZ = FloorDiv(instance.WorldMinZ - reach, span);
@@ -235,19 +275,25 @@ public sealed class PlacementEngine
                     if (other.IntersectsColumnRange(
                             instance.WorldMinX, instance.WorldMinZ, instance.WorldMaxX, instance.WorldMaxZ))
                     {
-                        return null;
+                        return true;
                     }
-                    int keepOut = Math.Max(def.SeparationRadius, other.Def.SeparationRadius);
+                    // Keep-out shrinks as density rises. It exists to leave a
+                    // landmark its clear approach, but a player who asks for a
+                    // crowded world is asking for exactly that; left fixed, the
+                    // extra landmarks a high setting adds delete more small
+                    // finds than the setting creates.
+                    int keepOut = (int)MathF.Round(
+                        Math.Max(def.SeparationRadius, other.Def.SeparationRadius) * m_separationScale);
                     long dx = instance.CenterX - other.CenterX;
                     long dz = instance.CenterZ - other.CenterZ;
                     if (dx * dx + dz * dz < (long)keepOut * keepOut)
                     {
-                        return null;
+                        return true;
                     }
                 }
             }
         }
-        return instance;
+        return false;
     }
 
     private int? ComputeAnchorY(StructureDef def, StructureVariant variant, StructureBounds data, int ox, int oz)

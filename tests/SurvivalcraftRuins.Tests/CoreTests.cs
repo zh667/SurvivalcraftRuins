@@ -470,8 +470,8 @@ public class LootAndTemplateTests
                 {
                     Assert.Equal(bounds, StructureBounds.From(data));
                 }
-                Assert.True(data.SizeX <= PlacementEngine.MaxFootprint, $"{variant.Name} too wide: {data.SizeX}");
-                Assert.True(data.SizeZ <= PlacementEngine.MaxFootprint, $"{variant.Name} too deep: {data.SizeZ}");
+                Assert.True(data.SizeX <= def.Footprint, $"{variant.Name} too wide: {data.SizeX}");
+                Assert.True(data.SizeZ <= def.Footprint, $"{variant.Name} too deep: {data.SizeZ}");
             }
         }
         Assert.Equal(23, variantCount);
@@ -493,10 +493,10 @@ public class DensityTests
         return defs;
     }
 
-    private static double PerSquareKm(IWorldSampler sampler, int seed = 20260808)
+    private static double PerSquareKm(IWorldSampler sampler, int seed = 20260808, float density = 1f)
     {
         var defs = LandDefs();
-        var engine = new PlacementEngine(seed, sampler, defs);
+        var engine = new PlacementEngine(seed, sampler, defs, density);
         const int side = 2000;   // 4 km^2
         var seen = new HashSet<(int, int)>();
         for (int i = 0; i < defs.Count; i++)
@@ -518,13 +518,31 @@ public class DensityTests
     }
 
     /// <summary>
-    /// Land structures sit around one every 110 blocks. Measured over a real
-    /// area so a future grid tweak that undoes it fails here.
+    /// Land structures sit around one every 170 blocks at the default setting,
+    /// up about three quarters from layout 4 after players reported walking too
+    /// long between finds. Measured over a real area so a future grid tweak
+    /// that undoes it fails here.
     /// </summary>
     [Fact]
-    public void LandDensityIsAroundTwentyPerSquareKilometre()
+    public void LandDensityIsAroundThirtyFivePerSquareKilometre()
     {
-        Assert.InRange(PerSquareKm(new FlatSampler(80f)), 14, 28);
+        Assert.InRange(PerSquareKm(new FlatSampler(80f)), 28, 45);
+    }
+
+    /// <summary>
+    /// And the setting has to be worth touching: the tier a looting player
+    /// cares about must keep climbing all the way to the top of the slider.
+    /// Both halves matter — chances that saturate, or keep-out radii that stay
+    /// fixed while landmarks multiply, each flatten the dial on their own.
+    /// </summary>
+    [Fact]
+    public void TurningDensityUpKeepsAddingStructures()
+    {
+        double at1 = PerSquareKm(new FlatSampler(80f));
+        double at2 = PerSquareKm(new FlatSampler(80f), density: 2f);
+        double at4 = PerSquareKm(new FlatSampler(80f), density: 4f);
+        Assert.True(at2 > at1 * 1.6, $"{at1:0.0} -> {at2:0.0} per km^2 at 2x");
+        Assert.True(at4 > at2 * 1.3, $"{at2:0.0} -> {at4:0.0} per km^2 at 4x");
     }
 
     /// <summary>
@@ -581,7 +599,7 @@ public class DensityTests
     public void EveryWorldUsesTheCurrentTable()
     {
         var defs = StructureRegistry.CreateDefs(TestRegistry.Templates());
-        Assert.Equal(18, defs.Single(d => d.Name == "small").GridChunks);
+        Assert.Equal(10, defs.Single(d => d.Name == "small").GridChunks);
         Assert.Contains(defs, d => d.Name == "desert_temple");
         Assert.Contains(defs, d => d.Name == "jungle_temple");
         Assert.Contains(defs, d => d.Name == "monument");
@@ -1185,5 +1203,16 @@ internal static class TestRegistry
     public static IReadOnlyList<StructureDef> Defs()
     {
         return s_defs ??= StructureRegistry.CreateDefs(Templates());
+    }
+
+    public static string AssetsDir()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "src", "SurvivalcraftRuins")))
+        {
+            dir = dir.Parent;
+        }
+        Assert.NotNull(dir);
+        return Path.Combine(dir!.FullName, "src", "SurvivalcraftRuins", "Assets");
     }
 }

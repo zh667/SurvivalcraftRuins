@@ -10,6 +10,13 @@
     <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
 
+  <!-- The two runtimes need separate binaries anyway (see tools/package.sh);
+       RUINS_SCAPI switches on the plugin-only hooks, such as the official
+       mod-settings button. Default (tests, plain builds) is Net 2.4. -->
+  <PropertyGroup Condition="'$(RuinsFlavor)' == 'scapi'">
+    <DefineConstants>$(DefineConstants);RUINS_SCAPI</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Survivalcraft">
       <HintPath>$(SurvivalcraftDir)Survivalcraft.dll</HintPath>

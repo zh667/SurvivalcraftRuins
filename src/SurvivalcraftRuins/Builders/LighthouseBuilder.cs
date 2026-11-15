@@ -51,7 +51,8 @@ public static class LighthouseBuilder
                     }
                 }
             }
-            b.Set(0, y, 1, "WoodenLadderBlock", 0);
+            // Against the wall at z = 3 (rr = 9): hangs on C - FaceToPoint3(2).
+            b.Set(0, y, 2, "WoodenLadderBlock", 2);
         }
         // Tower door facing the keeper's room.
         b.Fill(2, 1, 0, 3, 2, 0, "AirBlock");

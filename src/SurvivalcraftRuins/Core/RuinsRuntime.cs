@@ -77,6 +77,14 @@ public static class RuinsRuntime
         }
         s_time += dt;
 
+        if (RuinsSettings.Density != state.DensityScale)
+        {
+            float previous = state.DensityScale;
+            state.ApplyDensity(RuinsSettings.Density);
+            Log.Information($"[Ruins] Density {previous:0.##} -> {state.DensityScale:0.##}; "
+                + "applies to land generated from now on.");
+        }
+
         DrainIncoming(state);
         ProcessPendingChests(state);
         ProcessAmbushes(state);
@@ -125,30 +133,38 @@ public static class RuinsRuntime
                 }
                 BlockResolver.EnsureInitialized();
 
-                // Every world, however old, gets the current table. Earlier
-                // versions pinned a world to the layout it was created with so
-                // that a structure straddling the explored frontier could never
-                // end up half written. That cost more than it bought: players
-                // adding the mod to a world they already play got the old,
-                // near-empty layout and never saw the new structures. The
-                // frontier artefact is one partially written building at the
-                // edge of already generated land, once, and only where the two
-                // layouts disagree.
+                // Every world, however old, gets the current table: a player who
+                // adds the mod to a world they already play should still meet
+                // today's structures in the land they have yet to explore.
+                // Whether a proposed structure may actually be built is decided
+                // per instance and recorded in the world's ledger, so a table
+                // that changes under a half-explored world adds buildings to
+                // virgin land without ever slicing one along the frontier.
                 var saved = WorldState.ReadSaveData(gameInfo.DirectoryName);
                 float density = RuinsSettings.Density;
                 int layout = StructureRegistry.CurrentLayoutVersion;
-                if (saved != null && saved.LayoutVersion != layout)
+
+                // Sticky, because a mixed world's old frontier is still out
+                // there: recording "layout 4" today must not make tomorrow's
+                // session believe the whole world was built by table 4.
+                bool mixed = saved == null
+                    ? gameInfo.TotalElapsedGameTime > 0.0
+                    : saved.MixedLand || saved.LayoutVersion != layout;
+                if (mixed && (saved == null || !saved.MixedLand))
                 {
                     Log.Information(
-                        $"[Ruins] World '{gameInfo.DirectoryName}' was generated with layout "
-                        + $"{saved.LayoutVersion}; newly generated chunks will use layout {layout}. "
-                        + "Already generated land is untouched.");
+                        $"[Ruins] World '{gameInfo.DirectoryName}' holds land generated with layout "
+                        + $"{saved?.LayoutVersion ?? 0}; from now on chunks use layout {layout}. Structures that "
+                        + "would fall partly on the old land are skipped rather than written in halves.");
                 }
 
                 var defs = StructureRegistry.CreateDefs(s_templates);
                 var sampler = new GeneratorSampler(terrain.TerrainContentsGenerator);
                 var state = new WorldState
                 {
+                    Ledger = StructureLedger.Decode(saved?.Ledger),
+                    ChunkProbe = SerializerChunkProbe.TryCreate(terrain),
+                    MixedLand = mixed,
                     Project = project,
                     Terrain = terrain,
                     GameInfo = gameInfo,
@@ -156,6 +172,8 @@ public static class RuinsRuntime
                     Players = project.FindSubsystem<SubsystemPlayers>(throwOnError: true),
                     CreatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(throwOnError: true),
                     Generator = terrain.TerrainContentsGenerator,
+                    WorldSeed = gameInfo.WorldSeed,
+                    Sampler = sampler,
                     Placement = new PlacementEngine(gameInfo.WorldSeed, sampler, defs, density),
                     LootPools = s_lootPools,
                     DensityScale = density,
@@ -166,7 +184,8 @@ public static class RuinsRuntime
                 s_state = state;
                 Log.Information(
                     $"[Ruins] Bound to world '{gameInfo.DirectoryName}', seed {gameInfo.WorldSeed}, "
-                    + $"layout {layout}, density {density:0.##}, guards {RuinsSettings.Guards:0.##}.");
+                    + $"layout {layout}, density {density:0.##}, guards {RuinsSettings.Guards:0.##}, "
+                    + $"ledger {state.Ledger.Count} entries{(mixed ? ", mixed land" : "")}.");
                 return state;
             }
             catch (Exception exception)
@@ -226,42 +245,52 @@ public static class RuinsRuntime
             int contents = state.Terrain.Terrain.GetCellContents(pending.X, pending.Y, pending.Z);
             string blockName = pending.ContainerTemplate == "Dispenser" ? "DispenserBlock" : "ChestBlock";
             bool stillThere = BlockResolver.TryGetIndex(blockName, out int blockIndex) && contents == blockIndex;
-            if (stillThere)
+            bool hasEntity = stillThere && state.BlockEntities.GetBlockEntity(pending.X, pending.Y, pending.Z) != null;
+            switch (ContainerStocking.Decide(stillThere, hasEntity))
             {
-                try
-                {
-                    FillChest(state, pending);
-                }
-                catch (Exception exception)
-                {
-                    Log.Warning($"[Ruins] Container fill at {pending.X},{pending.Y},{pending.Z} failed: {exception.Message}");
-                }
+                case StockAction.Fill:
+                    try
+                    {
+                        FillChest(state, pending);
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Warning($"[Ruins] Container fill at {pending.X},{pending.Y},{pending.Z} failed: {exception.Message}");
+                    }
+                    break;
+                case StockAction.AlreadyStocked:
+                    s_keptAsLeft++;
+                    break;
             }
             state.PendingChests.RemoveAt(i);
             state.Dirty = true;
         }
+        if (s_keptAsLeft > 0 && state.PendingChests.Count == 0)
+        {
+            Log.Information($"[Ruins] {s_keptAsLeft} regenerated container(s) were already stocked; left as the player left them.");
+            s_keptAsLeft = 0;
+        }
     }
+
+    /// <summary>Containers skipped since the last log line; see <see cref="ContainerStocking"/>.</summary>
+    private static int s_keptAsLeft;
 
     private static void FillChest(WorldState state, PendingChest pending)
     {
         var point = new Point3(pending.X, pending.Y, pending.Z);
+        // Replicates SubsystemBlockEntities.CreateBlockEntityLogic without
+        // the owner (which dereferences a null miner during worldgen).
+        var databaseObject = state.Project.GameDatabase.Database.FindDatabaseObject(
+            pending.ContainerTemplate, state.Project.GameDatabase.EntityTemplateType, throwIfNotFound: true);
+        var valuesDictionary = new ValuesDictionary();
+        valuesDictionary.PopulateFromDatabaseObject(databaseObject);
+        valuesDictionary.GetValue<ValuesDictionary>("BlockEntity").SetValue("Coordinates", point);
+        var entity = state.Project.CreateEntity(valuesDictionary);
+        state.Project.AddEntity(entity);
         var blockEntity = state.BlockEntities.GetBlockEntity(pending.X, pending.Y, pending.Z);
         if (blockEntity == null)
         {
-            // Replicates SubsystemBlockEntities.CreateBlockEntityLogic without
-            // the owner (which dereferences a null miner during worldgen).
-            var databaseObject = state.Project.GameDatabase.Database.FindDatabaseObject(
-                pending.ContainerTemplate, state.Project.GameDatabase.EntityTemplateType, throwIfNotFound: true);
-            var valuesDictionary = new ValuesDictionary();
-            valuesDictionary.PopulateFromDatabaseObject(databaseObject);
-            valuesDictionary.GetValue<ValuesDictionary>("BlockEntity").SetValue("Coordinates", point);
-            var entity = state.Project.CreateEntity(valuesDictionary);
-            state.Project.AddEntity(entity);
-            blockEntity = state.BlockEntities.GetBlockEntity(pending.X, pending.Y, pending.Z);
-            if (blockEntity == null)
-            {
-                return;
-            }
+            return;
         }
         // ComponentChest and ComponentDispenser share ComponentInventoryBase, so
         // the same fill path serves chests and loaded arrow traps.

@@ -43,6 +43,26 @@ public sealed class RuinsModLoader : ModLoader
         }
     }
 
+    public override void OnLoadingFinished(List<Action> actions)
+    {
+#if RUINS_SCAPI
+        // Mod Settings values are loaded before this runs.
+        RuinsModSettings.Pull();
+#else
+        // Net 2.4 has no Mod Settings page: the mod brings its own screen and
+        // hangs a button for it off the game's Settings screen, which is
+        // already registered by now.
+        RuinsScreens.EnsureScreen();
+        RuinsScreens.InjectButton();
+#endif
+    }
+
+#if RUINS_SCAPI
+    public override void OnModSettingChanged(string[] idPath, object value)
+    {
+        RuinsModSettings.Apply(idPath, value);
+    }
+#else
     public override void SaveSettings(System.Xml.Linq.XElement xElement)
     {
         RuinsSettings.Save(xElement);
@@ -52,4 +72,5 @@ public sealed class RuinsModLoader : ModLoader
     {
         RuinsSettings.Load(xElement);
     }
+#endif
 }

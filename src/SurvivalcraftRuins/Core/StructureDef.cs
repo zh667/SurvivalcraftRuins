@@ -174,6 +174,16 @@ public sealed class StructureDef
     /// <summary>Chance [0..1] that a grid cell actually contains an instance.</summary>
     public required float Chance { get; init; }
 
+    /// <summary>
+    /// How hard the density setting pulls on this slot, as an exponent: the
+    /// chance is multiplied by density^exponent. Small finds take the slider at
+    /// face value (1), because a player asking for more to loot means them.
+    /// Landmarks take it at half strength, so turning the dial up thickens the
+    /// countryside without putting a sky fortress on every horizon. 0 in the
+    /// setting still means nothing generates, whatever the exponent.
+    /// </summary>
+    public float DensityExponent { get; init; } = 1f;
+
     public required AnchorKind Anchor { get; init; }
 
     /// <summary>Max height difference across footprint corners for Land/Coast placement.</summary>
@@ -188,6 +198,12 @@ public sealed class StructureDef
 
     /// <summary>Temperature/humidity window; null places the structure in any biome.</summary>
     public BiomeFilter? Biome { get; init; }
+
+    /// <summary>
+    /// Largest horizontal extent any variant of this slot can have. Governs how
+    /// far around a chunk the engine looks for instances that might reach it.
+    /// </summary>
+    public int Footprint { get; init; } = PlacementEngine.MaxFootprint;
 
     public required IReadOnlyList<StructureVariant> Variants { get; init; }
 

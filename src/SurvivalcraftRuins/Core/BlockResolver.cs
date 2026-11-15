@@ -27,6 +27,13 @@ public static class BlockResolver
             }
             var map = new Dictionary<string, int>(StringComparer.Ordinal);
             var blocks = BlocksManager.Blocks;
+            if (blocks == null || Array.TrueForAll(blocks, b => b == null))
+            {
+                // No game loaded (unit tests, tools): every stock block class
+                // declares its own index.
+                s_indexByName = FromIndexConstants();
+                return;
+            }
             for (int i = 0; i < blocks.Length; i++)
             {
                 if (blocks[i] == null)
@@ -41,6 +48,25 @@ public static class BlockResolver
             }
             s_indexByName = map;
         }
+    }
+
+    private static Dictionary<string, int> FromIndexConstants()
+    {
+        var map = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var type in typeof(Block).Assembly.GetTypes())
+        {
+            if (!typeof(Block).IsAssignableFrom(type) || type.IsAbstract)
+            {
+                continue;
+            }
+            var field = type.GetField("Index",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly);
+            if (field?.GetValue(null) is int index && !map.ContainsKey(type.Name))
+            {
+                map.Add(type.Name, index);
+            }
+        }
+        return map;
     }
 
     public static bool TryGetIndex(string blockName, out int index)

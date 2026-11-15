@@ -6,6 +6,7 @@ public readonly record struct Cell(short X, short Y, short Z, ushort PaletteInde
 /// <summary>Palette entry: SC block class name plus data bits (Terrain data, not full value).</summary>
 public readonly record struct PaletteEntry(string BlockName, int Data);
 
+/// <summary>A chest; its loot pool comes from the variant's ChestPools list.</summary>
 public readonly record struct ChestMarker(short X, short Y, short Z);
 
 public readonly record struct AmbushMarker(short X, short Y, short Z);

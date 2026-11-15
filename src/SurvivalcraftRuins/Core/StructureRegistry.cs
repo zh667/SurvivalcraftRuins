@@ -16,7 +16,7 @@ public static class StructureRegistry
     /// existed, or with any older version of it, still gets today's structures
     /// in the land it has yet to explore.
     /// </summary>
-    public const int CurrentLayoutVersion = 4;
+    public const int CurrentLayoutVersion = 7;
 
     private static readonly WeatherProfile s_stoneRuin = new()
     {
@@ -34,7 +34,8 @@ public static class StructureRegistry
     private static readonly string[] s_reefGuards = { "Shark_Bull", "Barracuda", "Piranha" };
     private static readonly string[] s_deepGuards = { "Shark_Tiger", "Shark_GreatWhite", "Barracuda" };
 
-    public static IReadOnlyList<StructureDef> CreateDefs(IReadOnlyDictionary<string, StructureData> templates)
+    public static IReadOnlyList<StructureDef> CreateDefs(
+        IReadOnlyDictionary<string, StructureData> templates)
     {
         Func<int, StructureData> Template(string name)
         {
@@ -54,6 +55,7 @@ public static class StructureRegistry
                 Chance = 0.45f,
                 SeparationRadius = 150,
                 Anchor = AnchorKind.Sky,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -95,6 +97,7 @@ public static class StructureRegistry
                 SeparationRadius = 150,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 8f,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -158,6 +161,7 @@ public static class StructureRegistry
                 Chance = 0.55f,
                 SeparationRadius = 160,
                 Anchor = AnchorKind.DeepOcean,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -184,8 +188,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "desert_temple",
-                GridChunks = 16,
-                Chance = 0.6f,
+                GridChunks = 11,
+                Chance = 0.37f,
                 SeparationRadius = 110,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 8.0f,
@@ -216,8 +220,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "jungle_temple",
-                GridChunks = 18,
-                Chance = 0.5f,
+                GridChunks = 12,
+                Chance = 0.28f,
                 SeparationRadius = 100,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 8.0f,
@@ -253,6 +257,7 @@ public static class StructureRegistry
                 Chance = 0.45f,
                 SeparationRadius = 90,
                 Anchor = AnchorKind.Ocean,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -281,6 +286,7 @@ public static class StructureRegistry
                 SeparationRadius = 80,
                 Anchor = AnchorKind.Coast,
                 MaxSlope = 5f,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -306,6 +312,7 @@ public static class StructureRegistry
                 Chance = 0.5f,
                 SeparationRadius = 80,
                 Anchor = AnchorKind.Offshore,
+                DensityExponent = 0.5f,
                 Variants = new[]
                 {
                     new StructureVariant
@@ -330,8 +337,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "mine",
-                GridChunks = 28,
-                Chance = 0.45f,
+                GridChunks = 18,
+                Chance = 0.28f,
                 SeparationRadius = 70,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 4f,
@@ -358,8 +365,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "den",
-                GridChunks = 30,
-                Chance = 0.45f,
+                GridChunks = 24,
+                Chance = 0.29f,
                 SeparationRadius = 70,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 5f,
@@ -394,8 +401,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "tower",
-                GridChunks = 25,
-                Chance = 0.5f,
+                GridChunks = 15,
+                Chance = 0.31f,
                 SeparationRadius = 60,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 5f,
@@ -440,8 +447,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "homestead",
-                GridChunks = 20,
-                Chance = 0.5f,
+                GridChunks = 11,
+                Chance = 0.33f,
                 SeparationRadius = 55,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 3f,
@@ -487,8 +494,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "coast_hut",
-                GridChunks = 14,
-                Chance = 0.5f,
+                GridChunks = 9,
+                Chance = 0.35f,
                 SeparationRadius = 50,
                 Anchor = AnchorKind.Coast,
                 MaxSlope = 5f,
@@ -508,8 +515,8 @@ public static class StructureRegistry
             new StructureDef
             {
                 Name = "small",
-                GridChunks = 18,
-                Chance = 0.55f,
+                GridChunks = 10,
+                Chance = 0.45f,
                 SeparationRadius = 40,
                 Anchor = AnchorKind.Land,
                 MaxSlope = 3f,

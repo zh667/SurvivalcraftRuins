@@ -1,0 +1,29 @@
+{
+  "ModSettings": {
+    "SurvivalcraftRuins": {
+      "Ruins": {
+        "Name": "遗迹",
+        "Title": "生存战争·遗迹 · 模组设置",
+        "Description": "遗迹的生成密度、守卫强度。随时可改，密度只影响还没探索过的地方。",
+        "Density": {
+          "Name": "遗迹密度",
+          "Description": "从不生成到最多八档。已经生成的建筑不会移动或消失。"
+        },
+        "Guards": {
+          "Name": "守卫强度",
+          "Description": "守卫数量倍率，0 为关闭守卫；对已有遗迹同样立刻生效。"
+        }
+      },
+      "RuinsDensity": {
+        "Off": "不生成",
+        "VeryRare": "极少 ×0.25",
+        "Rare": "很少 ×0.5",
+        "Default": "默认 ×1",
+        "Common": "较多 ×1.5",
+        "VeryCommon": "很多 ×2",
+        "Abundant": "极多 ×3",
+        "Maximum": "最多 ×4"
+      }
+    }
+  }
+}

@@ -117,7 +117,17 @@ def parse_nbt(path):
 
 # ------------------------------------------------------------- block mapping
 
-FACING = {"north": 0, "east": 1, "south": 2, "west": 3}
+# Survivalcraft numbers faces 0 = +Z (south), 1 = +X (east), 2 = -Z (north),
+# 3 = -X (west) (CellFace.FaceToPoint3). Blocks hung on a wall (ladders, wall
+# torches) store the face they look out of; stairs and gates store the look
+# direction of the player who placed them, which is where a stair's tall half
+# ends up (StairsBlock collision boxes). Before 1.1 this file used one table,
+# north0/east1/south2/west3, for all of them: east/west stairs and gates came
+# out backwards, ladders and torches hung on the wrong wall, and log axes x/z
+# were swapped. tools/fix_orientation.py repaired the templates made with it.
+FACE = {"south": 0, "east": 1, "north": 2, "west": 3}
+LOOK = {"north": 0, "west": 1, "south": 2, "east": 3}
+WOOD_AXIS = {"y": 0, "z": 1, "x": 2}
 
 WOOD_KINDS = {
     "oak": "OakWoodBlock", "spruce": "SpruceWoodBlock", "birch": "BirchWoodBlock",
@@ -137,7 +147,7 @@ VOID = "__void__"    # cell not written at all
 
 
 def axis_data(props):
-    return {"y": 0, "x": 1, "z": 2}.get(props.get("axis", "y"), 0)
+    return WOOD_AXIS.get(props.get("axis", "y"), 0)
 
 
 def map_block(name, props, report):
@@ -166,7 +176,7 @@ def map_block(name, props, report):
         return ("CarpetBlock", 0)
 
     if n.endswith("_stairs"):
-        data = FACING.get(props.get("facing", "north"), 0)
+        data = LOOK.get(props.get("facing", "north"), 0)
         if props.get("half") == "top":
             data |= 4
         if any(k in n for k in ("cobblestone",)):
@@ -198,7 +208,7 @@ def map_block(name, props, report):
         return ("PlanksBlock", 0) if data is None else ("WoodenSlabBlock", data)
 
     if n.endswith("_fence_gate"):
-        return ("WoodenFenceGateBlock", FACING.get(props.get("facing", "north"), 0))
+        return ("WoodenFenceGateBlock", LOOK.get(props.get("facing", "north"), 0))
     if n.endswith("_fence"):
         return ("IronFenceBlock", 0) if "nether" in n or "iron" in n else ("WoodenFenceBlock", 0)
     if n.endswith("_wall"):
@@ -257,11 +267,11 @@ def map_block(name, props, report):
     if n in ("torch", "soul_torch") or n.endswith("_candle"):
         return ("TorchBlock", 4)
     if n in ("wall_torch", "soul_wall_torch"):
-        return ("TorchBlock", FACING.get(props.get("facing", "north"), 0))
+        return ("TorchBlock", FACE.get(props.get("facing", "north"), 0))
     if n in ("lantern", "soul_lantern", "sea_lantern", "glowstone", "shroomlight", "ochre_froglight", "verdant_froglight", "pearlescent_froglight"):
         return ("WickerLampBlock", 0)
     if n == "ladder":
-        return ("WoodenLadderBlock", FACING.get(props.get("facing", "north"), 0))
+        return ("WoodenLadderBlock", FACE.get(props.get("facing", "north"), 0))
     if n == "vine":
         return ("IvyBlock", 0)
     if n == "crafting_table":
